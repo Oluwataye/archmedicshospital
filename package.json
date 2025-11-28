@@ -6,10 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:server": "tsc --project tsconfig.server.json",
+    "build:all": "npm run build:server && npm run build",
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx",
     "type-check": "tsc --noEmit",
-    "start:prod": "node --loader ts-node/esm src/server/index.ts",
+    "start:prod": "node dist/server/index.js",
     "migrate:latest": "knex migrate:latest",
     "migrate:rollback": "knex migrate:rollback",
     "migrate:make": "knex migrate:make",

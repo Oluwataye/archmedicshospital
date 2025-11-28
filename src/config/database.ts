@@ -1,5 +1,5 @@
-import knex from '../server/db.ts';
-import { logger } from '../utils/logger.ts';
+import knex from '../server/db';
+import { logger } from '../utils/logger';
 
 export async function connectDatabase() {
     try {

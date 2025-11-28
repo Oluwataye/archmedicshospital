@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import db from '../db.ts';
+import db from '../db';
 
 // Extend Express Request type to include user
 declare global {

@@ -2,7 +2,7 @@ import express from 'express';
 import type { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import knex from '../db.ts';
+import knex from '../db';
 
 const router = express.Router();
 

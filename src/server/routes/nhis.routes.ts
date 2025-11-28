@@ -1,7 +1,7 @@
 import express from 'express';
 import type { Request, Response } from 'express';
-import knex from '../db.ts';
-import { auth, authorize } from '../middleware/auth.ts';
+import knex from '../db';
+import { auth, authorize } from '../middleware/auth';
 
 const router = express.Router();
 

@@ -35,7 +35,7 @@ router.get('/', auth, async (req, res) => {
         }
 
         const records = await query.orderBy('medical_records.record_date', 'desc');
-        res.json(records);
+        return res.json(records);
     } catch (error) {
         console.error('Error fetching medical records:', error);
         res.status(500).json({ error: 'Failed to fetch medical records' });
@@ -59,7 +59,7 @@ router.get('/:id', auth, async (req, res) => {
             return res.status(404).json({ error: 'Medical record not found' });
         }
 
-        res.json(record);
+        return res.json(record);
     } catch (error) {
         console.error('Error fetching medical record:', error);
         res.status(500).json({ error: 'Failed to fetch medical record' });
@@ -97,7 +97,7 @@ router.post('/', auth, async (req, res) => {
             return res.status(201).json(record);
         }
 
-        res.status(201).json(newRecord);
+        return res.status(201).json(newRecord);
     } catch (error) {
         console.error('Error creating medical record:', error);
         res.status(500).json({ error: 'Failed to create medical record' });
@@ -120,7 +120,7 @@ router.put('/:id', auth, async (req, res) => {
         });
 
         const updatedRecord = await db('medical_records').where('id', req.params.id).first();
-        res.json(updatedRecord);
+        return res.json(updatedRecord);
     } catch (error) {
         console.error('Error updating medical record:', error);
         res.status(500).json({ error: 'Failed to update medical record' });
@@ -131,7 +131,7 @@ router.put('/:id', auth, async (req, res) => {
 router.delete('/:id', auth, async (req, res) => {
     try {
         await db('medical_records').where('id', req.params.id).delete();
-        res.json({ message: 'Medical record deleted successfully' });
+        return res.json({ message: 'Medical record deleted successfully' });
     } catch (error) {
         console.error('Error deleting medical record:', error);
         res.status(500).json({ error: 'Failed to delete medical record' });
@@ -151,7 +151,7 @@ router.get('/patient/:patientId/history', auth, async (req, res) => {
             )
             .orderBy('medical_records.record_date', 'desc');
 
-        res.json(records);
+        return res.json(records);
     } catch (error) {
         console.error('Error fetching patient history:', error);
         res.status(500).json({ error: 'Failed to fetch patient history' });
@@ -168,7 +168,7 @@ router.get('/stats/overview', auth, async (req, res) => {
             .count('id as count')
             .groupBy('record_type');
 
-        res.json({
+        return res.json({
             total: totalRecords?.count || 0,
             byType
         });

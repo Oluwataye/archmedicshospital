@@ -37,7 +37,7 @@ router.get('/', auth, async (req, res) => {
         }
 
         const results = await query.orderBy('lab_results.order_date', 'desc');
-        res.json(results);
+        return res.json(results);
     } catch (error) {
         console.error('Error fetching lab results:', error);
         res.status(500).json({ error: 'Failed to fetch lab results' });
@@ -55,7 +55,7 @@ router.get('/:id', auth, async (req, res) => {
             return res.status(404).json({ error: 'Lab result not found' });
         }
 
-        res.json(result);
+        return res.json(result);
     } catch (error) {
         console.error('Error fetching lab result:', error);
         res.status(500).json({ error: 'Failed to fetch lab result' });
@@ -91,7 +91,7 @@ router.post('/', auth, async (req, res) => {
             return res.status(201).json(order);
         }
 
-        res.status(201).json(newOrder);
+        return res.status(201).json(newOrder);
     } catch (error) {
         console.error('Error creating lab order:', error);
         res.status(500).json({ error: 'Failed to create lab order' });
@@ -120,7 +120,7 @@ router.put('/:id', auth, async (req, res) => {
         });
 
         const updatedResult = await db('lab_results').where('id', req.params.id).first();
-        res.json(updatedResult);
+        return res.json(updatedResult);
     } catch (error) {
         console.error('Error updating lab result:', error);
         res.status(500).json({ error: 'Failed to update lab result' });
@@ -134,7 +134,7 @@ router.delete('/:id', auth, async (req, res) => {
             status: 'cancelled',
             updated_at: db.fn.now()
         });
-        res.json({ message: 'Lab order cancelled successfully' });
+        return res.json({ message: 'Lab order cancelled successfully' });
     } catch (error) {
         console.error('Error cancelling lab order:', error);
         res.status(500).json({ error: 'Failed to cancel lab order' });
@@ -154,7 +154,7 @@ router.get('/pending/orders', auth, async (req, res) => {
                 'patients.mrn as patient_mrn'
             )
             .orderBy('lab_results.order_date', 'asc');
-        res.json(pendingOrders);
+        return res.json(pendingOrders);
     } catch (error) {
         console.error('Error fetching pending lab orders:', error);
         res.status(500).json({ error: 'Failed to fetch pending lab orders' });
@@ -167,7 +167,7 @@ router.get('/patient/:patientId/history', auth, async (req, res) => {
         const results = await db('lab_results')
             .where('patient_id', req.params.patientId)
             .orderBy('order_date', 'desc');
-        res.json(results);
+        return res.json(results);
     } catch (error) {
         console.error('Error fetching patient lab history:', error);
         res.status(500).json({ error: 'Failed to fetch patient lab history' });

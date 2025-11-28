@@ -40,7 +40,7 @@ router.get('/', auth, async (req, res) => {
             .limit(Number(limit))
             .offset(Number(offset));
 
-        res.json({
+        return res.json({
             data: patients,
             total,
             page: Math.floor(Number(offset) / Number(limit)) + 1,
@@ -73,7 +73,7 @@ router.get('/:id', auth, async (req, res) => {
             .orderBy('record_date', 'desc')
             .limit(5);
 
-        res.json({
+        return res.json({
             ...patient,
             recentAppointments: appointments,
             recentMedicalRecords: medicalRecords
@@ -127,7 +127,7 @@ router.post('/', auth, async (req, res) => {
             return res.status(201).json(patient);
         }
 
-        res.status(201).json(newPatient);
+        return res.status(201).json(newPatient);
     } catch (error) {
         console.error('Error creating patient:', error);
         res.status(500).json({ error: 'Failed to create patient' });
@@ -155,7 +155,7 @@ router.put('/:id', auth, async (req, res) => {
         });
 
         const updatedPatient = await db('patients').where('id', req.params.id).first();
-        res.json(updatedPatient);
+        return res.json(updatedPatient);
     } catch (error) {
         console.error('Error updating patient:', error);
         res.status(500).json({ error: 'Failed to update patient' });
@@ -179,7 +179,7 @@ router.delete('/:id', auth, async (req, res) => {
         }
 
         await db('patients').where('id', req.params.id).delete();
-        res.json({ message: 'Patient deleted successfully' });
+        return res.json({ message: 'Patient deleted successfully' });
     } catch (error) {
         console.error('Error deleting patient:', error);
         res.status(500).json({ error: 'Failed to delete patient' });

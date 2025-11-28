@@ -18,7 +18,7 @@ router.get('/providers', auth, async (req: Request, res: Response) => {
 
         const providers = await query.orderBy('name', 'asc');
 
-        res.json(providers);
+        return res.json(providers);
     } catch (error) {
         console.error('Error fetching HMO providers:', error);
         res.status(500).json({ error: 'Failed to fetch HMO providers' });
@@ -38,7 +38,7 @@ router.get('/providers/:id', auth, async (req: Request, res: Response) => {
             return res.status(404).json({ error: 'HMO provider not found' });
         }
 
-        res.json(provider);
+        return res.json(provider);
     } catch (error) {
         console.error('Error fetching HMO provider:', error);
         res.status(500).json({ error: 'Failed to fetch HMO provider' });
@@ -83,7 +83,7 @@ router.post('/providers', auth, authorize(['admin']), async (req: Request, res: 
             })
             .returning('*');
 
-        res.status(201).json(provider);
+        return res.status(201).json(provider);
     } catch (error) {
         console.error('Error creating HMO provider:', error);
         res.status(500).json({ error: 'Failed to create HMO provider' });
@@ -111,7 +111,7 @@ router.put('/providers/:id', auth, authorize(['admin']), async (req: Request, re
             return res.status(404).json({ error: 'HMO provider not found' });
         }
 
-        res.json(provider);
+        return res.json(provider);
     } catch (error) {
         console.error('Error updating HMO provider:', error);
         res.status(500).json({ error: 'Failed to update HMO provider' });
@@ -132,7 +132,7 @@ router.delete('/providers/:id', auth, authorize(['admin']), async (req: Request,
             return res.status(404).json({ error: 'HMO provider not found' });
         }
 
-        res.json({ message: 'HMO provider deactivated successfully', provider });
+        return res.json({ message: 'HMO provider deactivated successfully', provider });
     } catch (error) {
         console.error('Error deactivating HMO provider:', error);
         res.status(500).json({ error: 'Failed to deactivate HMO provider' });
@@ -156,7 +156,7 @@ router.get('/providers/:id/packages', auth, async (req: Request, res: Response) 
             exclusions: pkg.exclusions ? JSON.parse(pkg.exclusions) : [],
         }));
 
-        res.json(parsedPackages);
+        return res.json(parsedPackages);
     } catch (error) {
         console.error('Error fetching HMO packages:', error);
         res.status(500).json({ error: 'Failed to fetch HMO packages' });
@@ -183,7 +183,7 @@ router.get('/packages/:id', auth, async (req: Request, res: Response) => {
             exclusions: pkg.exclusions ? JSON.parse(pkg.exclusions) : [],
         };
 
-        res.json(parsedPackage);
+        return res.json(parsedPackage);
     } catch (error) {
         console.error('Error fetching package:', error);
         res.status(500).json({ error: 'Failed to fetch package' });
@@ -221,7 +221,7 @@ router.post('/packages', auth, authorize(['admin']), async (req: Request, res: R
             })
             .returning('*');
 
-        res.status(201).json(pkg);
+        return res.status(201).json(pkg);
     } catch (error) {
         console.error('Error creating package:', error);
         res.status(500).json({ error: 'Failed to create package' });
@@ -255,7 +255,7 @@ router.put('/packages/:id', auth, authorize(['admin']), async (req: Request, res
             return res.status(404).json({ error: 'Package not found' });
         }
 
-        res.json(pkg);
+        return res.json(pkg);
     } catch (error) {
         console.error('Error updating package:', error);
         res.status(500).json({ error: 'Failed to update package' });
@@ -275,7 +275,7 @@ router.delete('/packages/:id', auth, authorize(['admin']), async (req: Request, 
             return res.status(404).json({ error: 'Package not found' });
         }
 
-        res.json({ message: 'Package deleted successfully' });
+        return res.json({ message: 'Package deleted successfully' });
     } catch (error) {
         console.error('Error deleting package:', error);
         res.status(500).json({ error: 'Failed to delete package' });
@@ -291,7 +291,7 @@ router.get('/providers/:id/tariffs', auth, async (req: Request, res: Response) =
             .where('hmo_provider_id', id)
             .orderBy('created_at', 'desc');
 
-        res.json(tariffs);
+        return res.json(tariffs);
     } catch (error) {
         console.error('Error fetching tariffs:', error);
         res.status(500).json({ error: 'Failed to fetch tariffs' });
@@ -327,7 +327,7 @@ router.post('/tariffs', auth, authorize(['admin']), async (req: Request, res: Re
             })
             .returning('*');
 
-        res.status(201).json(tariff);
+        return res.status(201).json(tariff);
     } catch (error) {
         console.error('Error creating tariff:', error);
         res.status(500).json({ error: 'Failed to create tariff' });
@@ -353,7 +353,7 @@ router.put('/tariffs/:id', auth, authorize(['admin']), async (req: Request, res:
             return res.status(404).json({ error: 'Tariff not found' });
         }
 
-        res.json(tariff);
+        return res.json(tariff);
     } catch (error) {
         console.error('Error updating tariff:', error);
         res.status(500).json({ error: 'Failed to update tariff' });
@@ -373,7 +373,7 @@ router.delete('/tariffs/:id', auth, authorize(['admin']), async (req: Request, r
             return res.status(404).json({ error: 'Tariff not found' });
         }
 
-        res.json({ message: 'Tariff deleted successfully' });
+        return res.json({ message: 'Tariff deleted successfully' });
     } catch (error) {
         console.error('Error deleting tariff:', error);
         res.status(500).json({ error: 'Failed to delete tariff' });
@@ -433,7 +433,7 @@ router.get('/eligibility/:patientId', auth, async (req: Request, res: Response) 
             message = 'Patient policy has not started yet';
         }
 
-        res.json({
+        return res.json({
             is_eligible: isEligible,
             patient_id: patientId,
             hmo_provider: hmoProvider,
@@ -482,7 +482,7 @@ router.post('/check-coverage', auth, async (req: Request, res: Response) => {
             return res.json({ covered: false, message: 'Service not covered by HMO' });
         }
 
-        res.json({
+        return res.json({
             covered: true,
             copay_amount: tariff.copay_amount,
             copay_percentage: tariff.copay_percentage,

@@ -36,7 +36,7 @@ router.post('/login', async (req: Request, res: Response) => {
         // Remove password hash from response
         delete user.password_hash;
 
-        res.json({ user, token });
+        return res.json({ user, token });
     } catch (error) {
         console.error('Login error:', error);
         res.status(500).json({ error: 'Login failed' });
@@ -60,7 +60,7 @@ router.get('/profile', async (req: Request, res: Response) => {
         }
 
         delete user.password_hash;
-        res.json(user);
+        return res.json(user);
     } catch (error) {
         res.status(401).json({ error: 'Invalid token' });
     }

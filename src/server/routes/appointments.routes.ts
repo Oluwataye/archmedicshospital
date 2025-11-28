@@ -37,7 +37,7 @@ router.get('/', auth, async (req, res) => {
         }
 
         const appointments = await query.orderBy('appointments.appointment_date', 'asc').orderBy('appointments.appointment_time', 'asc');
-        res.json(appointments);
+        return res.json(appointments);
     } catch (error) {
         console.error('Error fetching appointments:', error);
         res.status(500).json({ error: 'Failed to fetch appointments' });
@@ -64,7 +64,7 @@ router.get('/:id', auth, async (req, res) => {
             return res.status(404).json({ error: 'Appointment not found' });
         }
 
-        res.json(appointment);
+        return res.json(appointment);
     } catch (error) {
         console.error('Error fetching appointment:', error);
         res.status(500).json({ error: 'Failed to fetch appointment' });
@@ -113,7 +113,7 @@ router.post('/', auth, async (req, res) => {
             return res.status(201).json(appointment);
         }
 
-        res.status(201).json(newAppointment);
+        return res.status(201).json(newAppointment);
     } catch (error) {
         console.error('Error creating appointment:', error);
         res.status(500).json({ error: 'Failed to create appointment' });
@@ -133,7 +133,7 @@ router.put('/:id', auth, async (req, res) => {
         });
 
         const updatedAppointment = await db('appointments').where('id', req.params.id).first();
-        res.json(updatedAppointment);
+        return res.json(updatedAppointment);
     } catch (error) {
         console.error('Error updating appointment:', error);
         res.status(500).json({ error: 'Failed to update appointment' });
@@ -147,7 +147,7 @@ router.delete('/:id', auth, async (req, res) => {
             status: 'cancelled',
             updated_at: db.fn.now()
         });
-        res.json({ message: 'Appointment cancelled successfully' });
+        return res.json({ message: 'Appointment cancelled successfully' });
     } catch (error) {
         console.error('Error cancelling appointment:', error);
         res.status(500).json({ error: 'Failed to cancel appointment' });
@@ -170,7 +170,7 @@ router.get('/availability/:doctorId', auth, async (req, res) => {
             .whereNot('status', 'cancelled')
             .select('appointment_time', 'duration');
 
-        res.json(appointments);
+        return res.json(appointments);
     } catch (error) {
         console.error('Error checking availability:', error);
         res.status(500).json({ error: 'Failed to check availability' });

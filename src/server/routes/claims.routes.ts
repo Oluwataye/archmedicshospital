@@ -42,7 +42,7 @@ router.get('/', auth, async (req: Request, res: Response) => {
 
         const claims = await query.orderBy('hmo_claims.created_at', 'desc');
 
-        res.json(claims);
+        return res.json(claims);
     } catch (error) {
         console.error('Error fetching claims:', error);
         res.status(500).json({ error: 'Failed to fetch claims' });
@@ -71,7 +71,7 @@ router.get('/:id', auth, async (req: Request, res: Response) => {
             .join('nhis_service_codes', 'hmo_claim_items.service_code_id', 'nhis_service_codes.id')
             .where('hmo_claim_items.claim_id', id);
 
-        res.json({ ...claim, items });
+        return res.json({ ...claim, items });
     } catch (error) {
         console.error('Error fetching claim:', error);
         res.status(500).json({ error: 'Failed to fetch claim' });
@@ -91,7 +91,7 @@ router.get('/number/:claimNumber', auth, async (req: Request, res: Response) => 
             return res.status(404).json({ error: 'Claim not found' });
         }
 
-        res.json(claim);
+        return res.json(claim);
     } catch (error) {
         console.error('Error fetching claim:', error);
         res.status(500).json({ error: 'Failed to fetch claim' });
@@ -142,7 +142,7 @@ router.post('/', auth, async (req: Request, res: Response) => {
 
         await knex('hmo_claim_items').insert(claimItems);
 
-        res.status(201).json(claim);
+        return res.status(201).json(claim);
     } catch (error) {
         console.error('Error creating claim:', error);
         res.status(500).json({ error: 'Failed to create claim' });
@@ -167,7 +167,7 @@ router.put('/:id/submit', auth, async (req: Request, res: Response) => {
             return res.status(404).json({ error: 'Claim not found' });
         }
 
-        res.json(claim);
+        return res.json(claim);
     } catch (error) {
         console.error('Error submitting claim:', error);
         res.status(500).json({ error: 'Failed to submit claim' });
@@ -194,7 +194,7 @@ router.put('/:id/approve', auth, authorize(['admin']), async (req: Request, res:
             return res.status(404).json({ error: 'Claim not found' });
         }
 
-        res.json(claim);
+        return res.json(claim);
     } catch (error) {
         console.error('Error approving claim:', error);
         res.status(500).json({ error: 'Failed to approve claim' });
@@ -224,7 +224,7 @@ router.put('/:id/reject', auth, authorize(['admin']), async (req: Request, res: 
             return res.status(404).json({ error: 'Claim not found' });
         }
 
-        res.json(claim);
+        return res.json(claim);
     } catch (error) {
         console.error('Error rejecting claim:', error);
         res.status(500).json({ error: 'Failed to reject claim' });
@@ -249,7 +249,7 @@ router.put('/:id/paid', auth, authorize(['admin', 'cashier']), async (req: Reque
             return res.status(404).json({ error: 'Claim not found' });
         }
 
-        res.json(claim);
+        return res.json(claim);
     } catch (error) {
         console.error('Error marking claim as paid:', error);
         res.status(500).json({ error: 'Failed to mark claim as paid' });

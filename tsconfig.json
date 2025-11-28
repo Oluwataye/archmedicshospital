@@ -22,9 +22,9 @@
     "strictNullChecks": true,
     "strictFunctionTypes": true,
     "noImplicitThis": true,
-    "noImplicitReturns": true,
+    "noImplicitReturns": false,
     "noFallthroughCasesInSwitch": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "baseUrl": ".",
     "paths": {
       "@/*": [

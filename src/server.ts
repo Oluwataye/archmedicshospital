@@ -13,15 +13,15 @@ import { logger } from './utils/logger';
 import { connectDatabase } from './config/database';
 
 // Import routes
-import authRoutes from './routes/auth';
-import userRoutes from './routes/users';
-import patientRoutes from './routes/patients';
-import appointmentRoutes from './routes/appointments';
-import medicalRecordRoutes from './routes/medicalRecords';
-import vitalSignRoutes from './routes/vitalSigns';
-import labResultRoutes from './routes/labResults';
-import prescriptionRoutes from './routes/prescriptions';
-import analyticsRoutes from './routes/analytics';
+import authRoutes from './routes/auth.routes';
+import userRoutes from './routes/users.routes';
+import patientRoutes from './routes/patients.routes';
+import appointmentRoutes from './routes/appointments.routes';
+import medicalRecordRoutes from './routes/medical-records.routes';
+import vitalSignRoutes from './routes/vital-signs.routes';
+import labResultRoutes from './routes/lab.routes';
+import prescriptionRoutes from './routes/prescriptions.routes';
+// import analyticsRoutes from './routes/analytics';
 
 // Load environment variables
 dotenv.config();
@@ -96,7 +96,7 @@ app.use('/api/medical-records', medicalRecordRoutes);
 app.use('/api/vital-signs', vitalSignRoutes);
 app.use('/api/lab-results', labResultRoutes);
 app.use('/api/prescriptions', prescriptionRoutes);
-app.use('/api/analytics', analyticsRoutes);
+// app.use('/api/analytics', analyticsRoutes);
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {

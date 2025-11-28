@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-const AppointmentForm: React.FC = () => {
+const AppointmentForm: React.FC<any> = ({ open, onOpenChange, onSubmit }) => {
     return (
         <form className="space-y-4">
             <div>

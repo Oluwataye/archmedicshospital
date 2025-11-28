@@ -4,9 +4,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
-const PatientRegistrationModal: React.FC = () => {
+interface PatientRegistrationModalProps {
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
+    onSave?: (data: any) => void;
+}
+
+const PatientRegistrationModal: React.FC<PatientRegistrationModalProps> = ({ open, onOpenChange, onSave }) => {
     return (
-        <Dialog>
+        <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogTrigger asChild>
                 <Button>Register Patient</Button>
             </DialogTrigger>
@@ -20,6 +26,7 @@ const PatientRegistrationModal: React.FC = () => {
                         <Input id="name" className="col-span-3" />
                     </div>
                 </div>
+                <Button onClick={() => onSave?.({})}>Save</Button>
             </DialogContent>
         </Dialog>
     );

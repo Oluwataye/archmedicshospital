@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-const RecentPatients: React.FC = () => {
+const RecentPatients: React.FC<any> = ({ patients, filteredPatients }) => {
     return (
         <Card>
             <CardHeader>

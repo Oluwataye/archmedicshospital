@@ -1,7 +1,7 @@
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-const DiseasePrevalenceTable: React.FC = () => {
+const DiseasePrevalenceTable: React.FC<any> = ({ filteredData, totalCount, onViewDetails }) => {
     return (
         <Table>
             <TableHeader>

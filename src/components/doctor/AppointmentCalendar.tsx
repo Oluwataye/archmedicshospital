@@ -1,7 +1,7 @@
 import React from 'react';
 import { Calendar } from "@/components/ui/calendar";
 
-const AppointmentCalendar: React.FC = () => {
+const AppointmentCalendar: React.FC<any> = ({ onSelectAppointment }) => {
     const [date, setDate] = React.useState<Date | undefined>(new Date());
 
     return (

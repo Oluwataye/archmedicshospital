@@ -94,7 +94,7 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
         user: state.user ? {
           ...state.user,
           ...action.payload,
-          name: action.payload.firstName && action.payload.lastName 
+          name: action.payload.firstName && action.payload.lastName
             ? `${action.payload.firstName} ${action.payload.lastName}`
             : state.user.name,
         } : null,
@@ -109,6 +109,7 @@ interface AuthContextProps extends AuthState {
   logout: () => Promise<void>;
   clearError: () => void;
   updateProfile: (data: Partial<User>) => void;
+  loading: boolean; // Added this line as per instruction
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -193,7 +194,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateProfile = (data: Partial<User>) => {
     dispatch({ type: 'UPDATE_PROFILE', payload: data });
-    
+
     // Update localStorage
     if (state.user) {
       const updatedUser = { ...state.user, ...data };
@@ -207,6 +208,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     logout,
     clearError,
     updateProfile,
+    loading: state.isLoading,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

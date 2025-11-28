@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-const ConsultationForm: React.FC = () => {
+const ConsultationForm: React.FC<any> = ({ patientName, patientId, onClose }) => {
     return (
         <form className="space-y-4">
             <div>

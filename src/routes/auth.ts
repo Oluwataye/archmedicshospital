@@ -2,7 +2,7 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
-import db from '../config/database';
+import db from '../server/db.ts';
 import { logger } from '../utils/logger';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 

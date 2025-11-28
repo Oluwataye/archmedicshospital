@@ -10,17 +10,17 @@ import dotenv from 'dotenv';
 
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { logger } from './utils/logger';
-import { connectDatabase } from './config/database';
+import { connectDatabase } from './config/database.ts';
 
 // Import routes
-import authRoutes from './routes/auth.routes';
-import userRoutes from './routes/users.routes';
-import patientRoutes from './routes/patients.routes';
-import appointmentRoutes from './routes/appointments.routes';
-import medicalRecordRoutes from './routes/medical-records.routes';
-import vitalSignRoutes from './routes/vital-signs.routes';
-import labResultRoutes from './routes/lab.routes';
-import prescriptionRoutes from './routes/prescriptions.routes';
+import authRoutes from './server/routes/auth.routes.ts';
+import userRoutes from './server/routes/users.routes.ts';
+import patientRoutes from './server/routes/patients.routes.ts';
+import appointmentRoutes from './server/routes/appointments.routes.ts';
+import medicalRecordRoutes from './server/routes/medical-records.routes.ts';
+import vitalSignRoutes from './server/routes/vital-signs.routes.ts';
+import labResultRoutes from './server/routes/lab.routes.ts';
+import prescriptionRoutes from './server/routes/prescriptions.routes.ts';
 // import analyticsRoutes from './routes/analytics';
 
 // Load environment variables

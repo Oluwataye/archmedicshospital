@@ -1,12 +1,12 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { Loader2, Lock, Mail, ShieldCheck, User } from 'lucide-react';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -15,127 +15,159 @@ const LoginPage = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    // Simulate network delay
-    setTimeout(() => {
-      const success = login(email, password);
-      
+    // Simulate network delay for better UX feel
+    setTimeout(async () => {
+      const success = await login(email, password);
+
       if (success) {
-        // Redirect based on user role
-        if (email === 'admin@archmedics.com') {
-          navigate('/dashboard');
-        } else if (email === 'doctor@archmedics.com') {
-          navigate('/dashboard');
-        } else if (email === 'nurse@archmedics.com') {
-          navigate('/nurse');
-        } else if (email === 'pharmacist@archmedics.com') {
-          navigate('/pharmacy');
-        } else if (email === 'labtech@archmedics.com') {
-          navigate('/lab');
-        } else if (email === 'cashier@archmedics.com') {
-          navigate('/cashier');
-        } else if (email === 'ehr@archmedics.com') {
-          navigate('/ehr');
-        }
-        
-        toast.success('Login successful!');
+        toast.success('Welcome back!');
+        // Navigation is handled by the protected route or the component that called login
+        // But we can force a redirect here if needed, though usually AuthContext state change triggers re-render
+        // For this demo, we'll manually navigate based on role if needed, but App.tsx handles routing.
+        // Let's just navigate to root which will redirect based on role.
+        navigate('/');
       } else {
-        toast.error('Invalid email or password. Please try again.');
+        toast.error('Invalid credentials. Please check your email and password.');
       }
-      
       setLoading(false);
     }, 1000);
   };
 
+  const fillDemoCredentials = (roleEmail: string) => {
+    setEmail(roleEmail);
+    setPassword('password'); // Assuming a default password for demo
+    toast.info(`Demo credentials filled for ${roleEmail.split('@')[0]}`);
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="w-full max-w-md px-4">
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 mx-auto rounded-full bg-medical-primary flex items-center justify-center text-white text-2xl font-bold">
-            A
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 p-4">
+      <div className="w-full max-w-5xl grid md:grid-cols-2 gap-8 items-center">
+
+        {/* Left Side - Branding */}
+        <div className="hidden md:flex flex-col space-y-6 text-slate-800 dark:text-slate-200">
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
+              <ShieldCheck className="h-8 w-8 text-primary-foreground" />
+            </div>
+            <span className="text-3xl font-bold tracking-tight">Archmedics HMS</span>
           </div>
-          <h1 className="mt-4 text-3xl font-bold">ARCHMEDICS HMS</h1>
-          <p className="mt-2 text-gray-600">Sign in to your account</p>
+          <p className="text-lg text-muted-foreground leading-relaxed">
+            A comprehensive Hospital Management System designed for modern healthcare facilities.
+            Streamline patient care, manage resources, and improve clinical outcomes.
+          </p>
+          <div className="grid grid-cols-2 gap-4 pt-4">
+            <div className="p-4 rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700">
+              <User className="h-6 w-6 text-primary mb-2" />
+              <h3 className="font-semibold">Role-Based Access</h3>
+              <p className="text-sm text-muted-foreground">Secure portals for Doctors, Nurses, and Staff.</p>
+            </div>
+            <div className="p-4 rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700">
+              <ShieldCheck className="h-6 w-6 text-primary mb-2" />
+              <h3 className="font-semibold">Secure & Compliant</h3>
+              <p className="text-sm text-muted-foreground">Enterprise-grade security for patient data.</p>
+            </div>
+          </div>
         </div>
 
-        <Card>
+        {/* Right Side - Login Form */}
+        <Card className="w-full max-w-md mx-auto shadow-xl border-slate-200 dark:border-slate-800">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center">Login</CardTitle>
+            <CardTitle className="text-2xl font-bold text-center">Sign in</CardTitle>
+            <CardDescription className="text-center">
+              Enter your credentials to access your account
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input 
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="name@archmedics.com"
+                    className="pl-9"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password">Password</Label>
-                  <a 
-                    href="#" 
-                    onClick={(e) => {
-                      e.preventDefault();
-                      toast.info('Password reset functionality would go here.');
-                    }}
-                    className="text-sm text-blue-500 hover:underline"
-                  >
+                  <a href="#" className="text-sm text-primary hover:underline font-medium">
                     Forgot password?
                   </a>
                 </div>
-                <Input 
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    className="pl-9"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                </div>
               </div>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="w-full"
                 disabled={loading}
+                size="lg"
               >
-                {loading ? 'Signing in...' : 'Sign in'}
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  'Sign in'
+                )}
               </Button>
             </form>
 
             <div className="mt-6">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300"></div>
+                  <span className="w-full border-t" />
                 </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">Demo Accounts</span>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">
+                    Demo Accounts
+                  </span>
                 </div>
               </div>
-              
-              <div className="mt-6 grid grid-cols-1 gap-3 text-sm text-center">
-                <div className="text-gray-500">
-                  <strong>EHR Manager:</strong> ehr@archmedics.com / ehr123
-                </div>
-                <div className="text-gray-500">
-                  <strong>Doctor:</strong> doctor@archmedics.com / doctor123
-                </div>
-                <div className="text-gray-500">
-                  <strong>Lab Tech:</strong> labtech@archmedics.com / labtech123
-                </div>
-                <div className="text-gray-500">
-                  <strong>Cashier:</strong> cashier@archmedics.com / cashier123
-                </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <Button variant="outline" size="sm" onClick={() => fillDemoCredentials('admin@archmedics.com')}>
+                  Admin
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => fillDemoCredentials('doctor@archmedics.com')}>
+                  Doctor
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => fillDemoCredentials('nurse@archmedics.com')}>
+                  Nurse
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => fillDemoCredentials('ehr@archmedics.com')}>
+                  EHR
+                </Button>
               </div>
             </div>
           </CardContent>
+          <CardFooter className="flex justify-center border-t p-4 bg-slate-50 dark:bg-slate-900/50 rounded-b-xl">
+            <p className="text-xs text-muted-foreground text-center">
+              Protected by reCAPTCHA and subject to the Privacy Policy and Terms of Service.
+            </p>
+          </CardFooter>
         </Card>
       </div>
     </div>

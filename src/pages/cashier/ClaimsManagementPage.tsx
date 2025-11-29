@@ -1,9 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Eye, Send, CheckCircle, XCircle, Filter } from 'lucide-react';
+import { Plus, Search, Eye, Send, Filter } from 'lucide-react';
 import { toast } from 'sonner';
 import claimsService from '@/services/claimsService';
 import { HMOClaim, ClaimsStatistics } from '@/types/hmo';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { FileText, TrendingUp, CheckCircle, Clock } from 'lucide-react';
 
 export default function ClaimsManagementPage() {
     const [claims, setClaims] = useState<HMOClaim[]>([]);
@@ -57,15 +64,15 @@ export default function ClaimsManagementPage() {
         claim.patient_id.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const getStatusBadge = (status: string) => {
-        const styles = {
-            pending: 'bg-yellow-100 text-yellow-800',
-            submitted: 'bg-blue-100 text-blue-800',
-            approved: 'bg-green-100 text-green-800',
-            rejected: 'bg-red-100 text-red-800',
-            paid: 'bg-purple-100 text-purple-800'
+    const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
+        const variants = {
+            pending: 'secondary' as const,
+            submitted: 'outline' as const,
+            approved: 'default' as const,
+            rejected: 'destructive' as const,
+            paid: 'default' as const
         };
-        return styles[status as keyof typeof styles] || 'bg-gray-100 text-gray-800';
+        return variants[status as keyof typeof variants] || 'outline';
     };
 
     if (loading && !statistics) {
@@ -73,137 +80,175 @@ export default function ClaimsManagementPage() {
     }
 
     return (
-        <div className="p-6 space-y-6">
-            <div className="flex justify-between items-center">
+        <div className="space-y-6 animate-in fade-in duration-500">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Claims Management</h1>
-                    <p className="text-gray-500">Manage HMO claims and submissions</p>
+                    <h1 className="text-3xl font-bold tracking-tight">Claims Management</h1>
+                    <p className="text-muted-foreground mt-1">Manage HMO claims and submissions</p>
                 </div>
-                <button
-                    className="bg-primary text-primary-foreground px-4 py-2 rounded-md flex items-center gap-2 hover:bg-primary/90 transition-colors"
-                    onClick={() => toast.info('Create claim functionality - integrate with patient billing')}
-                >
-                    <Plus size={20} />
+                <Button onClick={() => toast.info('Create claim functionality - integrate with patient billing')}>
+                    <Plus className="h-4 w-4 mr-2" />
                     New Claim
-                </button>
+                </Button>
             </div>
 
             {/* Statistics Cards */}
             {statistics && (
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div className="bg-white p-4 rounded-lg border shadow-sm">
-                        <div className="text-sm text-gray-500">Total Claims</div>
-                        <div className="text-2xl font-bold text-gray-900">{statistics.total_claims}</div>
-                        <div className="text-xs text-gray-400 mt-1">₦{statistics.total_claim_amount.toLocaleString()}</div>
-                    </div>
-                    <div className="bg-white p-4 rounded-lg border shadow-sm">
-                        <div className="text-sm text-gray-500">Pending</div>
-                        <div className="text-2xl font-bold text-yellow-600">{statistics.pending_claims}</div>
-                    </div>
-                    <div className="bg-white p-4 rounded-lg border shadow-sm">
-                        <div className="text-sm text-gray-500">Approved</div>
-                        <div className="text-2xl font-bold text-green-600">{statistics.approved_claims}</div>
-                        <div className="text-xs text-gray-400 mt-1">₦{statistics.total_approved_amount.toLocaleString()}</div>
-                    </div>
-                    <div className="bg-white p-4 rounded-lg border shadow-sm">
-                        <div className="text-sm text-gray-500">Paid</div>
-                        <div className="text-2xl font-bold text-purple-600">{statistics.paid_claims}</div>
-                        <div className="text-xs text-gray-400 mt-1">₦{statistics.total_paid_amount.toLocaleString()}</div>
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <Card>
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                <FileText className="h-4 w-4" />
+                                Total Claims
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{statistics.total_claims}</div>
+                            <p className="text-xs text-muted-foreground mt-1">
+                                ₦{statistics.total_claim_amount.toLocaleString()}
+                            </p>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                <Clock className="h-4 w-4" />
+                                Pending
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-yellow-600">{statistics.pending_claims}</div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                <CheckCircle className="h-4 w-4" />
+                                Approved
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-green-600">{statistics.approved_claims}</div>
+                            <p className="text-xs text-muted-foreground mt-1">
+                                ₦{statistics.total_approved_amount.toLocaleString()}
+                            </p>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                <TrendingUp className="h-4 w-4" />
+                                Paid
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-purple-600">{statistics.paid_claims}</div>
+                            <p className="text-xs text-muted-foreground mt-1">
+                                ₦{statistics.total_paid_amount.toLocaleString()}
+                            </p>
+                        </CardContent>
+                    </Card>
                 </div>
             )}
 
-            <div className="bg-white rounded-lg border shadow-sm">
-                <div className="p-4 border-b flex items-center gap-4">
-                    <div className="relative flex-1 max-w-md">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                        <input
-                            type="text"
-                            placeholder="Search by claim number or patient ID..."
-                            className="w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
+            <Card>
+                <CardContent className="p-0">
+                    <div className="p-4 border-b flex flex-col md:flex-row items-center gap-4">
+                        <div className="relative flex-1 w-full">
+                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                type="text"
+                                placeholder="Search by claim number or patient ID..."
+                                className="pl-9"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                        </div>
+                        <div className="flex items-center gap-2 w-full md:w-auto">
+                            <Filter className="h-4 w-4 text-muted-foreground" />
+                            <Select value={statusFilter} onValueChange={setStatusFilter}>
+                                <SelectTrigger className="w-[180px]">
+                                    <SelectValue placeholder="All Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Status</SelectItem>
+                                    <SelectItem value="pending">Pending</SelectItem>
+                                    <SelectItem value="submitted">Submitted</SelectItem>
+                                    <SelectItem value="approved">Approved</SelectItem>
+                                    <SelectItem value="rejected">Rejected</SelectItem>
+                                    <SelectItem value="paid">Paid</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <Filter size={20} className="text-gray-400" />
-                        <select
-                            className="border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/20"
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                        >
-                            <option value="all">All Status</option>
-                            <option value="pending">Pending</option>
-                            <option value="submitted">Submitted</option>
-                            <option value="approved">Approved</option>
-                            <option value="rejected">Rejected</option>
-                            <option value="paid">Paid</option>
-                        </select>
-                    </div>
-                </div>
 
-                <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead className="bg-gray-50 border-b">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Claim #</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Patient</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Claim Date</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Claim #</TableHead>
+                                <TableHead>Patient</TableHead>
+                                <TableHead>Claim Date</TableHead>
+                                <TableHead>Amount</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
                             {filteredClaims.length === 0 ? (
-                                <tr>
-                                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                                <TableRow>
+                                    <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
                                         No claims found
-                                    </td>
-                                </tr>
+                                    </TableCell>
+                                </TableRow>
                             ) : (
                                 filteredClaims.map((claim) => (
-                                    <tr key={claim.id} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4 font-medium text-gray-900">{claim.claim_number}</td>
-                                        <td className="px-6 py-4 text-gray-500">{claim.patient_id}</td>
-                                        <td className="px-6 py-4 text-gray-500">
+                                    <TableRow key={claim.id}>
+                                        <TableCell className="font-medium">{claim.claim_number}</TableCell>
+                                        <TableCell className="text-muted-foreground">{claim.patient_id}</TableCell>
+                                        <TableCell className="text-muted-foreground">
                                             {new Date(claim.claim_date).toLocaleDateString()}
-                                        </td>
-                                        <td className="px-6 py-4 text-gray-900">
+                                        </TableCell>
+                                        <TableCell className="font-medium">
                                             ₦{claim.claim_amount.toLocaleString()}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusBadge(claim.status)}`}>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge variant={getStatusVariant(claim.status)}>
                                                 {claim.status.charAt(0).toUpperCase() + claim.status.slice(1)}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right">
                                             <div className="flex justify-end gap-2">
-                                                <button
-                                                    className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
                                                     title="View Details"
                                                     onClick={() => toast.info(`View claim ${claim.claim_number}`)}
                                                 >
-                                                    <Eye size={18} />
-                                                </button>
+                                                    <Eye className="h-4 w-4" />
+                                                </Button>
                                                 {claim.status === 'pending' && (
-                                                    <button
-                                                        className="p-1 text-green-600 hover:bg-green-50 rounded"
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
                                                         title="Submit Claim"
                                                         onClick={() => handleSubmitClaim(claim.id)}
+                                                        className="text-green-600 hover:text-green-600"
                                                     >
-                                                        <Send size={18} />
-                                                    </button>
+                                                        <Send className="h-4 w-4" />
+                                                    </Button>
                                                 )}
                                             </div>
-                                        </td>
-                                    </tr>
+                                        </TableCell>
+                                    </TableRow>
                                 ))
                             )}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
         </div>
     );
 }

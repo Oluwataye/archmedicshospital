@@ -2,12 +2,15 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { 
-  Activity, 
-  Heart, 
-  Thermometer, 
-  Wind
+import {
+  Activity,
+  Heart,
+  Thermometer,
+  Wind,
+  AlertTriangle
 } from 'lucide-react';
+import { getBPStatus, getHRStatus, getTempStatus, getO2Status, getVitalTextColor } from '@/utils/vitalSignsUtils';
+import { cn } from '@/lib/utils';
 
 interface Patient {
   id: string;
@@ -42,25 +45,11 @@ export function EnhancedPatientCard({ patient, onViewChart, onNewRecord }: Enhan
     }
   }
 
-  const getVitalStatus = (vital: number | string, type: string) => {
-    if (type === 'bloodPressure') {
-      const [systolic] = String(vital).split('/').map(Number)
-      return systolic > 130 ? 'text-red-600' : 'text-green-600'
-    }
-    if (type === 'heartRate') {
-      const hr = Number(vital)
-      return hr > 100 || hr < 60 ? 'text-red-600' : 'text-green-600'
-    }
-    if (type === 'temperature') {
-      const temp = Number(vital)
-      return temp > 99.5 ? 'text-red-600' : 'text-green-600'
-    }
-    if (type === 'oxygenSat') {
-      const o2 = Number(vital)
-      return o2 < 95 ? 'text-red-600' : 'text-green-600'
-    }
-    return 'text-gray-600'
-  }
+  // Calculate vital statuses
+  const bpStatus = patient.vitals ? getBPStatus(patient.vitals.bloodPressure) : 'normal';
+  const hrStatus = patient.vitals ? getHRStatus(patient.vitals.heartRate) : 'normal';
+  const tempStatus = patient.vitals ? getTempStatus(patient.vitals.temperature) : 'normal';
+  const o2Status = patient.vitals ? getO2Status(patient.vitals.oxygenSat) : 'normal';
 
   return (
     <Card className="hover:shadow-lg transition-all duration-200 border-l-4 border-l-blue-500 bg-white">
@@ -79,7 +68,7 @@ export function EnhancedPatientCard({ patient, onViewChart, onNewRecord }: Enhan
           </Badge>
         </div>
       </CardHeader>
-      
+
       <CardContent className="space-y-4">
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
@@ -91,7 +80,7 @@ export function EnhancedPatientCard({ patient, onViewChart, onNewRecord }: Enhan
             <p className="font-semibold text-gray-900">{patient.records} Records</p>
           </div>
         </div>
-        
+
         {/* Enhanced Vital Signs Display */}
         {patient.vitals && (
           <div className="border-t pt-3">
@@ -102,58 +91,78 @@ export function EnhancedPatientCard({ patient, onViewChart, onNewRecord }: Enhan
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div className="flex items-center space-x-2">
                 <Heart className="w-3 h-3 text-red-500 flex-shrink-0" />
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <span className="text-gray-500">BP:</span>
-                  <span className={`ml-1 font-semibold ${getVitalStatus(patient.vitals.bloodPressure, 'bloodPressure')}`}>
+                  <span className={cn('ml-1 font-semibold', getVitalTextColor(bpStatus))}>
                     {patient.vitals.bloodPressure} mmHg
                   </span>
+                  {(bpStatus === 'danger' || bpStatus === 'borderline') && (
+                    <AlertTriangle className={cn('w-3 h-3 inline ml-1',
+                      bpStatus === 'danger' ? 'text-red-600' : 'text-amber-600'
+                    )} />
+                  )}
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-2">
                 <Activity className="w-3 h-3 text-blue-500 flex-shrink-0" />
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <span className="text-gray-500">HR:</span>
-                  <span className={`ml-1 font-semibold ${getVitalStatus(patient.vitals.heartRate, 'heartRate')}`}>
+                  <span className={cn('ml-1 font-semibold', getVitalTextColor(hrStatus))}>
                     {patient.vitals.heartRate} bpm
                   </span>
+                  {(hrStatus === 'danger' || hrStatus === 'borderline') && (
+                    <AlertTriangle className={cn('w-3 h-3 inline ml-1',
+                      hrStatus === 'danger' ? 'text-red-600' : 'text-amber-600'
+                    )} />
+                  )}
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-2">
                 <Thermometer className="w-3 h-3 text-orange-500 flex-shrink-0" />
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <span className="text-gray-500">Temp:</span>
-                  <span className={`ml-1 font-semibold ${getVitalStatus(patient.vitals.temperature, 'temperature')}`}>
+                  <span className={cn('ml-1 font-semibold', getVitalTextColor(tempStatus))}>
                     {patient.vitals.temperature}°F
                   </span>
+                  {(tempStatus === 'danger' || tempStatus === 'borderline') && (
+                    <AlertTriangle className={cn('w-3 h-3 inline ml-1',
+                      tempStatus === 'danger' ? 'text-red-600' : 'text-amber-600'
+                    )} />
+                  )}
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-2">
                 <Wind className="w-3 h-3 text-cyan-500 flex-shrink-0" />
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <span className="text-gray-500">O2:</span>
-                  <span className={`ml-1 font-semibold ${getVitalStatus(patient.vitals.oxygenSat, 'oxygenSat')}`}>
+                  <span className={cn('ml-1 font-semibold', getVitalTextColor(o2Status))}>
                     {patient.vitals.oxygenSat}%
                   </span>
+                  {(o2Status === 'danger' || o2Status === 'borderline') && (
+                    <AlertTriangle className={cn('w-3 h-3 inline ml-1',
+                      o2Status === 'danger' ? 'text-red-600' : 'text-amber-600'
+                    )} />
+                  )}
                 </div>
               </div>
             </div>
           </div>
         )}
-        
+
         <div className="flex space-x-2 pt-2">
-          <Button 
-            size="sm" 
-            variant="outline" 
+          <Button
+            size="sm"
+            variant="outline"
             className="flex-1 hover:bg-gray-50"
             onClick={onViewChart}
           >
             View Chart
           </Button>
-          <Button 
-            size="sm" 
+          <Button
+            size="sm"
             className="flex-1 bg-blue-600 hover:bg-blue-700"
             onClick={onNewRecord}
           >

@@ -4,9 +4,9 @@ import { UserRole } from '@/contexts/AuthContext';
 
 export interface NavItem {
   name: string;
-  icon: ReactNode;
+  icon?: ReactNode;
   path: string;
-  children?: { name: string; path: string }[];
+  children?: NavItem[];
   isActive?: boolean;
 }
 

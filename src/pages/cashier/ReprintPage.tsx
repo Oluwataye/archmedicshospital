@@ -29,10 +29,10 @@ const ReprintPage = () => {
     <div className="flex-1 p-6 overflow-auto">
       {/* Breadcrumbs */}
       <div className="text-gray-500 text-sm mb-4">Cashier &gt; Reprint</div>
-      
+
       {/* Page Header */}
       <h1 className="text-2xl font-bold text-gray-800 mb-4">Receipt Reprint</h1>
-      
+
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>Search for Receipt</CardTitle>
@@ -53,7 +53,7 @@ const ReprintPage = () => {
             </div>
             <Button type="submit" className="bg-blue-500">Search</Button>
           </form>
-          
+
           <div className="space-y-2 mb-4">
             <label className="block text-sm font-medium">Search by Date Range:</label>
             <div className="flex gap-4">
@@ -67,7 +67,7 @@ const ReprintPage = () => {
           </div>
         </CardContent>
       </Card>
-      
+
       <Card>
         <CardHeader>
           <CardTitle>Search Results</CardTitle>
@@ -91,7 +91,7 @@ const ReprintPage = () => {
                     <TableCell className="font-medium">{item.id}</TableCell>
                     <TableCell>{item.patient}</TableCell>
                     <TableCell>{item.service}</TableCell>
-                    <TableCell>${item.amount.toFixed(2)}</TableCell>
+                    <TableCell>₦{item.amount.toFixed(2)}</TableCell>
                     <TableCell>{item.date}</TableCell>
                     <TableCell>
                       <Button size="sm" onClick={() => handleReprint(item.id)}>

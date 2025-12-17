@@ -1,90 +1,57 @@
 
-import { useState } from 'react';
-import { Search, Filter, ChevronDown } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Filter, ChevronDown, Eye, Check, X, CreditCard } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
-import { 
+import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { ApiService } from '@/services/apiService';
+import LoadingSpinner from '@/components/common/LoadingSpinner';
 
 export default function PrescriptionsPage() {
   const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [prescriptions, setPrescriptions] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
-  
-  const [prescriptions] = useState([
-    {
-      id: 'RX123456',
-      patientName: 'John Doe',
-      patientId: 'P-10542',
-      medication: 'Atorvastatin',
-      dosage: '20mg',
-      frequency: 'Daily',
-      doctor: 'Dr. Howard',
-      date: '10:30 AM Today',
-      status: 'Pending',
-      priority: 'Urgent',
-      ward: 'ICU - Room 12'
-    },
-    {
-      id: 'RX123457',
-      patientName: 'Sarah Miller',
-      patientId: 'P-10398',
-      medication: 'Metformin',
-      dosage: '500mg',
-      frequency: 'BID',
-      doctor: 'Dr. Patel',
-      date: '9:45 AM Today',
-      status: 'Pending',
-      priority: 'High',
-      ward: 'Endocrinology - Room 5'
-    },
-    {
-      id: 'RX123458',
-      patientName: 'Robert Johnson',
-      patientId: 'P-10687',
-      medication: 'Amoxicillin',
-      dosage: '500mg',
-      frequency: 'TID',
-      doctor: 'Dr. Garcia',
-      date: '9:15 AM Today',
-      status: 'Pending',
-      priority: 'Normal',
-      ward: 'General Medicine - Room 23'
-    },
-    {
-      id: 'RX123459',
-      patientName: 'Emily Wilson',
-      patientId: 'P-10754',
-      medication: 'Lisinopril',
-      dosage: '10mg',
-      frequency: 'Daily',
-      doctor: 'Dr. Williams',
-      date: '8:30 AM Today',
-      status: 'Approved',
-      priority: 'Normal',
-      ward: 'Cardiology - Room 45'
-    },
-    {
-      id: 'RX123460',
-      patientName: 'Michael Davis',
-      patientId: 'P-10892',
-      medication: 'Albuterol',
-      dosage: '90mcg',
-      frequency: 'PRN',
-      doctor: 'Dr. Martinez',
-      date: 'Yesterday, 4:15 PM',
-      status: 'Rejected',
-      priority: 'High',
-      ward: 'Pulmonology - Room 32'
+
+  // View Details Modal
+  const [selectedPrescription, setSelectedPrescription] = useState<any>(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+
+  useEffect(() => {
+    loadPrescriptions();
+  }, [statusFilter]);
+
+  const loadPrescriptions = async () => {
+    try {
+      setLoading(true);
+      const params: any = {};
+      if (statusFilter !== 'All') {
+        params.status = statusFilter.toLowerCase();
+      }
+      const data = await ApiService.getPrescriptions(params);
+      setPrescriptions(data);
+    } catch (error) {
+      console.error('Error loading prescriptions:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load prescriptions",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -142,41 +109,102 @@ export default function PrescriptionsPage() {
     });
   };
 
-  const handleApprove = (id: string) => {
-    toast({
-      title: "Prescription Approved",
-      description: `Prescription ${id} has been approved`,
-      variant: "default",
-    });
+  const handleApprove = async (id: string) => {
+    try {
+      await ApiService.updatePrescription(id, { status: 'approved' });
+      toast({
+        title: "Prescription Approved",
+        description: "Prescription has been approved successfully",
+        variant: "default",
+      });
+      loadPrescriptions();
+    } catch (error) {
+      console.error('Error approving prescription:', error);
+      toast({
+        title: "Error",
+        description: "Failed to approve prescription",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleReject = (id: string) => {
-    toast({
-      title: "Prescription Rejected",
-      description: `Prescription ${id} has been rejected`,
-      variant: "destructive",
-    });
+  const handleSendToCashier = async (id: string) => {
+    try {
+      // Instead of 'approved', we might want a distinct status or just treat approved as ready for cashier?
+      // Based on plan: Doctor -> Pending. Pharmacist -> Approved (Sent to Cashier).
+      // If status is 'approved', we assume it's viewable by cashier if we change backend logic...
+      // BUT my billing route looks for 'pending_payment'.
+      // So I must update status to 'pending_payment'.
+      await ApiService.updatePrescription(id, { status: 'pending_payment' });
+      toast({
+        title: "Sent to Cashier",
+        description: "Prescription marked as ready for payment",
+        variant: "default",
+      });
+      loadPrescriptions();
+    } catch (error) {
+      console.error('Error sending to cashier:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send to cashier",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleReject = async (id: string) => {
+    try {
+      await ApiService.updatePrescription(id, { status: 'rejected' });
+      toast({
+        title: "Prescription Rejected",
+        description: "Prescription has been rejected",
+        variant: "destructive",
+      });
+      loadPrescriptions();
+    } catch (error) {
+      console.error('Error rejecting prescription:', error);
+      toast({
+        title: "Error",
+        description: "Failed to reject prescription",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleViewDetails = (prescription: any) => {
+    setSelectedPrescription(prescription);
+    setIsDetailsModalOpen(true);
+  };
+
+  const formatMedications = (meds: any) => {
+    if (!meds) return '-';
+    try {
+      const parsed = typeof meds === 'string' ? JSON.parse(meds) : meds;
+      if (Array.isArray(parsed)) {
+        return parsed.map((m: any) => `${m.name} (${m.dosage})`).join(', ');
+      }
+      return String(parsed);
+    } catch (e) {
+      return String(meds);
+    }
   };
 
   const filteredPrescriptions = prescriptions.filter(prescription => {
-    // Apply status filter
-    if (statusFilter !== 'All' && prescription.status !== statusFilter) {
-      return false;
-    }
-    
-    // Apply search query
+    // Search query filtering
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
+      const patientName = `${prescription.patient_first_name} ${prescription.patient_last_name}`.toLowerCase();
       return (
-        prescription.patientName.toLowerCase().includes(query) ||
-        prescription.id.toLowerCase().includes(query) ||
-        prescription.medication.toLowerCase().includes(query) ||
-        prescription.patientId.toLowerCase().includes(query)
+        patientName.includes(query) ||
+        prescription.id.toLowerCase().includes(query)
       );
     }
-    
     return true;
   });
+
+  if (loading && prescriptions.length === 0) {
+    return <LoadingSpinner fullScreen />;
+  }
 
   return (
     <div className="p-6">
@@ -184,7 +212,7 @@ export default function PrescriptionsPage() {
         <h1 className="text-2xl font-bold text-gray-800">Prescriptions</h1>
         <p className="text-gray-600">Review, verify and manage prescription orders</p>
       </div>
-      
+
       <Card className="mb-6">
         <CardHeader className="pb-2">
           <CardTitle>Filter Prescriptions</CardTitle>
@@ -207,7 +235,7 @@ export default function PrescriptionsPage() {
                 </div>
               </form>
             </div>
-            
+
             <div className="flex items-center">
               <span className="mr-2 text-gray-700">Status:</span>
               <DropdownMenu>
@@ -232,7 +260,7 @@ export default function PrescriptionsPage() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              
+
               <Button variant="outline" className="ml-2 flex items-center">
                 <Filter className="mr-2 h-4 w-4" /> More Filters
               </Button>
@@ -240,19 +268,18 @@ export default function PrescriptionsPage() {
           </div>
         </CardContent>
       </Card>
-      
+
       <Card>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Priority</TableHead>
                   <TableHead>Rx ID</TableHead>
                   <TableHead>Patient</TableHead>
-                  <TableHead>Medication</TableHead>
-                  <TableHead>Doctor</TableHead>
-                  <TableHead>Time</TableHead>
+                  <TableHead>Medications</TableHead>
+                  <TableHead>Prescriber</TableHead>
+                  <TableHead>Date</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -260,73 +287,89 @@ export default function PrescriptionsPage() {
               <TableBody>
                 {filteredPrescriptions.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-4">
+                    <TableCell colSpan={7} className="text-center py-4">
                       No prescriptions found matching your criteria
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredPrescriptions.map((prescription) => (
-                    <TableRow 
-                      key={prescription.id} 
-                      className={prescription.priority === 'Urgent' ? 'bg-red-50' : prescription.priority === 'High' ? 'bg-orange-50' : ''}
-                    >
+                    <TableRow key={prescription.id}>
+                      <TableCell className="font-medium text-xs">{prescription.id.slice(0, 8)}...</TableCell>
                       <TableCell>
                         <div className="flex items-center">
-                          <span className={`h-6 w-6 rounded-full flex items-center justify-center text-xs text-white font-bold ${getPriorityColor(prescription.priority)}`}>
-                            {getPriorityIcon(prescription.priority)}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-medium">{prescription.id}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
-                            {prescription.patientName.split(' ').map(name => name[0]).join('')}
+                          <div className="flex-shrink-0 h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-xs">
+                            {prescription.patient_first_name?.[0]}{prescription.patient_last_name?.[0]}
                           </div>
                           <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">{prescription.patientName}</div>
-                            <div className="text-xs text-gray-500">{prescription.patientId} • {prescription.ward}</div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {prescription.patient_first_name} {prescription.patient_last_name}
+                            </div>
+                            <div className="text-xs text-gray-500">MRN: {prescription.patient_mrn}</div>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="text-sm font-medium text-gray-900">{prescription.medication}</div>
-                        <div className="text-xs text-gray-500">{prescription.dosage} - {prescription.frequency}</div>
+                        <div className="text-sm text-gray-900 max-w-xs truncate">
+                          {formatMedications(prescription.medications)}
+                        </div>
                       </TableCell>
                       <TableCell className="text-sm text-gray-900">
-                        {prescription.doctor}
+                        Dr. {prescription.prescriber_first_name} {prescription.prescriber_last_name}
                       </TableCell>
                       <TableCell>
-                        <div className="text-sm text-gray-900">{prescription.date}</div>
+                        <div className="text-sm text-gray-900">
+                          {new Date(prescription.prescription_date).toLocaleDateString()}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {new Date(prescription.prescription_date).toLocaleTimeString()}
+                        </div>
                       </TableCell>
                       <TableCell>
-                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(prescription.status)}`}>
+                        <Badge className={getStatusColor(prescription.status)}>
                           {prescription.status}
-                        </span>
+                        </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        {prescription.status === 'Pending' ? (
-                          <>
-                            <Button 
-                              variant="ghost" 
-                              className="text-green-600 hover:text-green-900 mr-3"
-                              onClick={() => handleApprove(prescription.id)}
+                        <div className="flex justify-end gap-2">
+                          {(prescription.status === 'active' || prescription.status === 'pending') && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              onClick={() => handleSendToCashier(prescription.id)}
+                              title="Send to Cashier"
                             >
-                              Approve
+                              <CreditCard className="h-4 w-4" />
                             </Button>
-                            <Button 
-                              variant="ghost" 
-                              className="text-red-600 hover:text-red-900"
-                              onClick={() => handleReject(prescription.id)}
-                            >
-                              Reject
-                            </Button>
-                          </>
-                        ) : (
-                          <Button variant="outline" size="sm">
-                            View Details
+                          )}
+                          {prescription.status === 'active' && (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                onClick={() => handleApprove(prescription.id)}
+                              >
+                                <Check className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => handleReject(prescription.id)}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleViewDetails(prescription)}
+                          >
+                            <Eye className="h-4 w-4 mr-1" /> Details
                           </Button>
-                        )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -336,6 +379,104 @@ export default function PrescriptionsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* View Details Modal */}
+      <Dialog open={isDetailsModalOpen} onOpenChange={setIsDetailsModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Prescription Details</DialogTitle>
+            <DialogDescription>
+              View detailed information about this prescription including patient, medications, and prescriber.
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedPrescription && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4 p-4 bg-slate-50 rounded-lg">
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">Patient</h4>
+                  <p className="font-medium text-lg">
+                    {selectedPrescription.patient_first_name} {selectedPrescription.patient_last_name}
+                  </p>
+                  <p className="text-sm text-muted-foreground">MRN: {selectedPrescription.patient_mrn}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">Prescriber</h4>
+                  <p className="font-medium">
+                    Dr. {selectedPrescription.prescriber_first_name} {selectedPrescription.prescriber_last_name}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {new Date(selectedPrescription.prescription_date).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-medium mb-2">Medications</h4>
+                <div className="border rounded-md divide-y">
+                  {(() => {
+                    try {
+                      const meds = typeof selectedPrescription.medications === 'string'
+                        ? JSON.parse(selectedPrescription.medications)
+                        : selectedPrescription.medications;
+
+                      return Array.isArray(meds) ? meds.map((med: any, i: number) => (
+                        <div key={i} className="p-3 flex justify-between items-center">
+                          <div>
+                            <p className="font-medium">{med.name}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {med.dosage} • {med.frequency} • {med.duration}
+                            </p>
+                          </div>
+                          <Badge variant="outline">{med.quantity} units</Badge>
+                        </div>
+                      )) : <p className="p-3">No medications listed</p>;
+                    } catch (e) {
+                      return <p className="p-3 text-red-500">Error parsing medications</p>;
+                    }
+                  })()}
+                </div>
+              </div>
+
+              {selectedPrescription.notes && (
+                <div>
+                  <h4 className="font-medium mb-2">Notes</h4>
+                  <div className="p-3 bg-yellow-50 text-yellow-900 rounded-md border border-yellow-200 text-sm">
+                    {selectedPrescription.notes}
+                  </div>
+                </div>
+              )}
+
+              <DialogFooter className="gap-2">
+                <Button variant="outline" onClick={() => setIsDetailsModalOpen(false)}>
+                  Close
+                </Button>
+                {selectedPrescription.status === 'active' && (
+                  <>
+                    <Button
+                      variant="destructive"
+                      onClick={() => {
+                        handleReject(selectedPrescription.id);
+                        setIsDetailsModalOpen(false);
+                      }}
+                    >
+                      Reject
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        handleApprove(selectedPrescription.id);
+                        setIsDetailsModalOpen(false);
+                      }}
+                    >
+                      Approve
+                    </Button>
+                  </>
+                )}
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -15,6 +15,11 @@ export interface User {
   phone?: string;
   avatar?: string;
   name?: string; // For backward compatibility
+  isActive?: boolean; // User active status
+  department_id?: string; // Department assignment
+  unit_id?: string; // Unit/Ward assignment
+  first_name?: string; // For backend compatibility
+  last_name?: string; // For backend compatibility
 }
 
 // Define the UserRole type

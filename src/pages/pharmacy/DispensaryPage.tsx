@@ -1,159 +1,108 @@
-
-import { useState } from 'react';
-import { Search, Check, Clock, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, Check, Clock, History, RefreshCw } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useToast } from '@/hooks/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
+import { ApiService } from '@/services/apiService';
+import LoadingSpinner from '@/components/common/LoadingSpinner';
+import DispenseModal from '@/components/pharmacy/DispenseModal';
 
 export default function DispensaryPage() {
-  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState('pending');
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  
-  const [pendingDispensations] = useState([
-    {
-      id: 'RX123456',
-      patientName: 'John Doe',
-      patientId: 'P-10542',
-      medication: 'Atorvastatin',
-      dosage: '20mg',
-      quantity: '30 tablets',
-      frequency: 'Once daily',
-      doctor: 'Dr. Howard',
-      date: 'Today, 10:30 AM',
-      ward: 'ICU - Room 12',
-      status: 'Ready to Dispense'
-    },
-    {
-      id: 'RX123457',
-      patientName: 'Sarah Miller',
-      patientId: 'P-10398',
-      medication: 'Metformin',
-      dosage: '500mg',
-      quantity: '60 tablets',
-      frequency: 'Twice daily',
-      doctor: 'Dr. Patel',
-      date: 'Today, 9:45 AM',
-      ward: 'Endocrinology - Room 5',
-      status: 'Ready to Dispense'
-    },
-    {
-      id: 'RX123458',
-      patientName: 'Robert Johnson',
-      patientId: 'P-10687',
-      medication: 'Amoxicillin',
-      dosage: '500mg',
-      quantity: '21 capsules',
-      frequency: 'Three times daily for 7 days',
-      doctor: 'Dr. Garcia',
-      date: 'Today, 9:15 AM',
-      ward: 'General Medicine - Room 23',
-      status: 'Preparing'
-    },
-  ]);
-  
-  const [dispensedItems] = useState([
-    {
-      id: 'RX123455',
-      patientName: 'Emily Wilson',
-      patientId: 'P-10754',
-      medication: 'Lisinopril',
-      dosage: '10mg',
-      quantity: '30 tablets',
-      frequency: 'Once daily',
-      doctor: 'Dr. Williams',
-      dispensedDate: 'Today, 8:30 AM',
-      dispensedBy: 'Jane Pharmacist'
-    },
-    {
-      id: 'RX123454',
-      patientName: 'Michael Davis',
-      patientId: 'P-10892',
-      medication: 'Albuterol',
-      dosage: '90mcg',
-      quantity: '1 inhaler',
-      frequency: 'As needed',
-      doctor: 'Dr. Martinez',
-      dispensedDate: 'Yesterday, 4:15 PM',
-      dispensedBy: 'Jane Pharmacist'
+  const [prescriptions, setPrescriptions] = useState<any[]>([]);
+
+  // Dispense Modal
+  const [isDispenseModalOpen, setIsDispenseModalOpen] = useState(false);
+  const [selectedPrescription, setSelectedPrescription] = useState<any>(null);
+
+  useEffect(() => {
+    loadPrescriptions();
+  }, [activeTab]);
+
+  const loadPrescriptions = async () => {
+    try {
+      setLoading(true);
+      let data;
+      if (activeTab === 'pending') {
+        data = await ApiService.getActivePrescriptions();
+      } else {
+        // For dispensed, we filter by status 'dispensed'
+        // Ideally we'd have a specific endpoint, but we can reuse getPrescriptions with status filter
+        data = await ApiService.getPrescriptions({ status: 'dispensed' });
+      }
+      setPrescriptions(data);
+    } catch (error) {
+      console.error('Error loading prescriptions:', error);
+      toast.error('Failed to load prescriptions');
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Searching dispensary",
-      description: `Query: ${searchQuery}`,
-    });
+    // Client-side search for now
   };
 
-  const markAsDispensed = (id: string) => {
-    toast({
-      title: "Prescription Dispensed",
-      description: `Prescription ${id} has been marked as dispensed`,
-      variant: "default",
-    });
+  const openDispenseModal = (prescription: any) => {
+    setSelectedPrescription(prescription);
+    setIsDispenseModalOpen(true);
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'Ready to Dispense':
-        return <Check size={16} className="text-green-500 mr-2" />;
-      case 'Preparing':
-        return <Clock size={16} className="text-orange-500 mr-2" />;
-      default:
-        return null;
-    }
-  };
-
-  const filteredPendingItems = pendingDispensations.filter(item => {
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      return (
-        item.patientName.toLowerCase().includes(query) ||
-        item.id.toLowerCase().includes(query) ||
-        item.medication.toLowerCase().includes(query) ||
-        item.patientId.toLowerCase().includes(query)
-      );
-    }
-    return true;
+  const filteredPrescriptions = prescriptions.filter(p => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      p.patient_first_name?.toLowerCase().includes(query) ||
+      p.patient_last_name?.toLowerCase().includes(query) ||
+      p.patient_mrn?.toLowerCase().includes(query) ||
+      p.id.toLowerCase().includes(query)
+    );
   });
-  
-  const filteredDispensedItems = dispensedItems.filter(item => {
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      return (
-        item.patientName.toLowerCase().includes(query) ||
-        item.id.toLowerCase().includes(query) ||
-        item.medication.toLowerCase().includes(query) ||
-        item.patientId.toLowerCase().includes(query)
-      );
+
+  const formatMedications = (meds: any) => {
+    if (!meds) return '-';
+    try {
+      const parsed = typeof meds === 'string' ? JSON.parse(meds) : meds;
+      if (Array.isArray(parsed)) {
+        return parsed.map((m: any) => m.name || m).join(', ');
+      }
+      return String(parsed);
+    } catch (error) {
+      console.error('Error parsing medications:', error);
+      return String(meds); // Return raw value if JSON parsing fails
     }
-    return true;
-  });
+  };
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Dispensary</h1>
-        <p className="text-gray-600">Prepare and dispense medications to patients</p>
+    <div className="p-6 space-y-6 animate-in fade-in duration-500">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dispensary</h1>
+          <p className="text-muted-foreground mt-1">Prepare and dispense medications to patients</p>
+        </div>
+        <Button variant="outline" onClick={loadPrescriptions}>
+          <RefreshCw className="mr-2 h-4 w-4" /> Refresh
+        </Button>
       </div>
-      
-      <Card className="mb-6">
+
+      <Card>
         <CardHeader className="pb-2">
           <CardTitle>Search Prescriptions</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSearch}>
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search size={18} className="text-gray-500" />
-              </div>
-              <input
-                type="text"
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md bg-white"
-                placeholder="Search by prescription ID, patient name or medication..."
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                className="pl-10"
+                placeholder="Search by prescription ID, patient name or MRN..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -161,82 +110,74 @@ export default function DispensaryPage() {
           </form>
         </CardContent>
       </Card>
-      
-      <Tabs defaultValue="pending" className="w-full">
-        <TabsList className="grid grid-cols-2 mb-6">
-          <TabsTrigger value="pending" className="text-center py-2">
-            Pending ({pendingDispensations.length})
-          </TabsTrigger>
-          <TabsTrigger value="dispensed" className="text-center py-2">
-            Recently Dispensed
-          </TabsTrigger>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid grid-cols-2 mb-6 w-[400px]">
+          <TabsTrigger value="pending">Pending</TabsTrigger>
+          <TabsTrigger value="dispensed">Dispensed History</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="pending">
           <Card>
             <CardContent className="p-0">
-              <div className="overflow-x-auto">
+              <div className="rounded-md border">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Rx ID</TableHead>
+                      <TableHead>Date</TableHead>
                       <TableHead>Patient</TableHead>
-                      <TableHead>Medication</TableHead>
-                      <TableHead>Doctor</TableHead>
-                      <TableHead>Quantity</TableHead>
+                      <TableHead>Medications</TableHead>
+                      <TableHead>Prescriber</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredPendingItems.length === 0 ? (
+                    {loading ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-4">
+                        <TableCell colSpan={6} className="h-24 text-center">
+                          <LoadingSpinner />
+                        </TableCell>
+                      </TableRow>
+                    ) : filteredPrescriptions.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                           No pending prescriptions found
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filteredPendingItems.map((item) => (
+                      filteredPrescriptions.map((item) => (
                         <TableRow key={item.id}>
-                          <TableCell className="font-medium">{item.id}</TableCell>
-                          <TableCell>
-                            <div>
-                              <div className="font-medium">{item.patientName}</div>
-                              <div className="text-xs text-gray-500">{item.patientId} • {item.ward}</div>
-                            </div>
+                          <TableCell className="whitespace-nowrap">
+                            {new Date(item.prescription_date).toLocaleDateString()}
+                            <br />
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(item.prescription_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
                           </TableCell>
                           <TableCell>
                             <div>
-                              <div className="font-medium">{item.medication} {item.dosage}</div>
-                              <div className="text-xs text-gray-500">{item.quantity} • {item.frequency}</div>
-                            </div>
-                          </TableCell>
-                          <TableCell>{item.doctor}</TableCell>
-                          <TableCell>{item.quantity}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center">
-                              {getStatusIcon(item.status)}
-                              <span className={item.status === 'Ready to Dispense' ? 'text-green-500' : 'text-orange-500'}>
-                                {item.status}
-                              </span>
+                              <div className="font-medium">{item.patient_first_name} {item.patient_last_name}</div>
+                              <div className="text-xs text-muted-foreground">{item.patient_mrn}</div>
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Button 
-                              variant="outline"
+                            <div className="max-w-[300px] truncate" title={formatMedications(item.medications)}>
+                              {formatMedications(item.medications)}
+                            </div>
+                          </TableCell>
+                          <TableCell>Dr. {item.prescriber_last_name}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-orange-600 bg-orange-50 border-orange-200">
+                              Pending
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
                               size="sm"
-                              className="mr-2"
-                              onClick={() => markAsDispensed(item.id)}
-                              disabled={item.status !== 'Ready to Dispense'}
+                              onClick={() => openDispenseModal(item)}
                             >
-                              <Check size={16} className="mr-1" /> Dispense
-                            </Button>
-                            <Button 
-                              variant="outline"
-                              size="sm"
-                              className="text-gray-500"
-                            >
-                              View
+                              <Check className="mr-2 h-4 w-4" /> Dispense
                             </Button>
                           </TableCell>
                         </TableRow>
@@ -248,51 +189,63 @@ export default function DispensaryPage() {
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="dispensed">
           <Card>
             <CardContent className="p-0">
-              <div className="overflow-x-auto">
+              <div className="rounded-md border">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Rx ID</TableHead>
+                      <TableHead>Dispensed Date</TableHead>
                       <TableHead>Patient</TableHead>
-                      <TableHead>Medication</TableHead>
-                      <TableHead>Doctor</TableHead>
-                      <TableHead>Dispensed At</TableHead>
+                      <TableHead>Medications</TableHead>
+                      <TableHead>Prescriber</TableHead>
                       <TableHead>Dispensed By</TableHead>
-                      <TableHead>Actions</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredDispensedItems.length === 0 ? (
+                    {loading ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-4">
-                          No dispensed items found
+                        <TableCell colSpan={6} className="h-24 text-center">
+                          <LoadingSpinner />
+                        </TableCell>
+                      </TableRow>
+                    ) : filteredPrescriptions.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                          No dispensed prescriptions found
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filteredDispensedItems.map((item) => (
+                      filteredPrescriptions.map((item) => (
                         <TableRow key={item.id}>
-                          <TableCell className="font-medium">{item.id}</TableCell>
-                          <TableCell>
-                            <div>
-                              <div className="font-medium">{item.patientName}</div>
-                              <div className="text-xs text-gray-500">{item.patientId}</div>
-                            </div>
+                          <TableCell className="whitespace-nowrap">
+                            {item.dispensed_at ? new Date(item.dispensed_at).toLocaleDateString() : '-'}
+                            <br />
+                            <span className="text-xs text-muted-foreground">
+                              {item.dispensed_at ? new Date(item.dispensed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
+                            </span>
                           </TableCell>
                           <TableCell>
                             <div>
-                              <div className="font-medium">{item.medication} {item.dosage}</div>
-                              <div className="text-xs text-gray-500">{item.quantity} • {item.frequency}</div>
+                              <div className="font-medium">{item.patient_first_name} {item.patient_last_name}</div>
+                              <div className="text-xs text-muted-foreground">{item.patient_mrn}</div>
                             </div>
                           </TableCell>
-                          <TableCell>{item.doctor}</TableCell>
-                          <TableCell>{item.dispensedDate}</TableCell>
-                          <TableCell>{item.dispensedBy}</TableCell>
                           <TableCell>
-                            <Button 
+                            <div className="max-w-[300px] truncate" title={formatMedications(item.medications)}>
+                              {formatMedications(item.medications)}
+                            </div>
+                          </TableCell>
+                          <TableCell>Dr. {item.prescriber_last_name}</TableCell>
+                          <TableCell>
+                            {/* Ideally fetch user name, but for now just ID or placeholder */}
+                            <span className="text-sm">Pharmacist</span>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
                               variant="outline"
                               size="sm"
                             >
@@ -309,6 +262,13 @@ export default function DispensaryPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <DispenseModal
+        isOpen={isDispenseModalOpen}
+        onClose={() => setIsDispenseModalOpen(false)}
+        prescription={selectedPrescription}
+        onDispenseComplete={loadPrescriptions}
+      />
     </div>
   );
 }

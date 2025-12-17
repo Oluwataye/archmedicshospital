@@ -16,20 +16,43 @@ export const auth = async (req: Request, res: Response, next: NextFunction) => {
         const token = req.header('Authorization')?.replace('Bearer ', '');
 
         if (!token) {
-            throw new Error();
+            return res.status(401).json({ error: 'Authentication required. No token provided.' });
         }
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
-        const user = await db('users').where({ id: (decoded as any).id }).first();
+        // Validate JWT_SECRET exists
+        if (!process.env.JWT_SECRET) {
+            console.error('CRITICAL: JWT_SECRET is not configured!');
+            return res.status(500).json({ error: 'Server configuration error.' });
+        }
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET) as any;
+
+        // Check token expiration
+        if (decoded.exp && decoded.exp < Date.now() / 1000) {
+            return res.status(401).json({ error: 'Token expired. Please login again.' });
+        }
+
+        const user = await db('users').where({ id: decoded.id }).first();
 
         if (!user) {
-            throw new Error();
+            return res.status(401).json({ error: 'User not found. Please login again.' });
+        }
+
+        if (!user.is_active) {
+            return res.status(403).json({ error: 'Account has been deactivated.' });
         }
 
         req.user = user;
         next();
     } catch (error) {
-        res.status(401).send({ error: 'Please authenticate.' });
+        if (error instanceof jwt.TokenExpiredError) {
+            return res.status(401).json({ error: 'Token expired. Please login again.' });
+        }
+        if (error instanceof jwt.JsonWebTokenError) {
+            return res.status(401).json({ error: 'Invalid token. Please login again.' });
+        }
+        console.error('Authentication error:', error);
+        res.status(401).json({ error: 'Authentication failed.' });
     }
 };
 

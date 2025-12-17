@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Eye, CheckCircle, XCircle, Clock, Filter } from 'lucide-react';
+import { Plus, Search, Eye, CheckCircle, XCircle, Clock, Filter, FileText, LayoutDashboard } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 import preAuthService from '@/services/preauthService';
 import { HMOPreAuthorization } from '@/types/hmo';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
+import PreAuthModal from '@/components/hmo/PreAuthModal';
 
 export default function PreAuthorizationPage() {
     const [preAuths, setPreAuths] = useState<HMOPreAuthorization[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState<string>('all');
+    const [showModal, setShowModal] = useState(false);
 
     useEffect(() => {
         loadPreAuths();
@@ -98,7 +101,7 @@ export default function PreAuthorizationPage() {
                 </div>
                 <button
                     className="bg-primary text-primary-foreground px-4 py-2 rounded-md flex items-center gap-2 hover:bg-primary/90 transition-colors"
-                    onClick={() => toast.info('Create pre-auth functionality - integrate with patient care')}
+                    onClick={() => setShowModal(true)}
                 >
                     <Plus size={20} />
                     New Pre-Auth Request
@@ -106,29 +109,64 @@ export default function PreAuthorizationPage() {
             </div>
 
             {/* Statistics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-white p-4 rounded-lg border shadow-sm">
-                    <div className="text-sm text-gray-500">Total Requests</div>
-                    <div className="text-2xl font-bold text-gray-900">{preAuths.length}</div>
-                </div>
-                <div className="bg-white p-4 rounded-lg border shadow-sm">
-                    <div className="text-sm text-gray-500">Pending</div>
-                    <div className="text-2xl font-bold text-yellow-600">
-                        {preAuths.filter(p => p.status === 'pending').length}
-                    </div>
-                </div>
-                <div className="bg-white p-4 rounded-lg border shadow-sm">
-                    <div className="text-sm text-gray-500">Approved</div>
-                    <div className="text-2xl font-bold text-green-600">
-                        {preAuths.filter(p => p.status === 'approved').length}
-                    </div>
-                </div>
-                <div className="bg-white p-4 rounded-lg border shadow-sm">
-                    <div className="text-sm text-gray-500">Rejected</div>
-                    <div className="text-2xl font-bold text-red-600">
-                        {preAuths.filter(p => p.status === 'rejected').length}
-                    </div>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <Card className="card-accent-blue hover:shadow-lg transition-all hover:scale-105">
+                    <CardContent className="p-6 flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-medium text-muted-foreground">Total Requests</p>
+                            <h2 className="text-3xl font-bold text-blue-600">{preAuths.length}</h2>
+                            <p className="text-xs text-muted-foreground mt-1">All records</p>
+                        </div>
+                        <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center">
+                            <FileText className="h-6 w-6 text-blue-600" />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="card-accent-orange hover:shadow-lg transition-all hover:scale-105">
+                    <CardContent className="p-6 flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-medium text-muted-foreground">Pending</p>
+                            <h2 className="text-3xl font-bold text-yellow-600">
+                                {preAuths.filter(p => p.status === 'pending').length}
+                            </h2>
+                            <p className="text-xs text-muted-foreground mt-1">Awaiting approval</p>
+                        </div>
+                        <div className="h-12 w-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                            <Clock className="h-6 w-6 text-yellow-600" />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="card-accent-green hover:shadow-lg transition-all hover:scale-105">
+                    <CardContent className="p-6 flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-medium text-muted-foreground">Approved</p>
+                            <h2 className="text-3xl font-bold text-green-600">
+                                {preAuths.filter(p => p.status === 'approved').length}
+                            </h2>
+                            <p className="text-xs text-muted-foreground mt-1">Authorized</p>
+                        </div>
+                        <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center">
+                            <CheckCircle className="h-6 w-6 text-green-600" />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="card-accent-red hover:shadow-lg transition-all hover:scale-105">
+                    <CardContent className="p-6 flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-medium text-muted-foreground">Rejected</p>
+                            <h2 className="text-3xl font-bold text-red-600">
+                                {preAuths.filter(p => p.status === 'rejected').length}
+                            </h2>
+                            <p className="text-xs text-muted-foreground mt-1">Denied</p>
+                        </div>
+                        <div className="h-12 w-12 bg-red-100 rounded-full flex items-center justify-center">
+                            <XCircle className="h-6 w-6 text-red-600" />
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
 
             <div className="bg-white rounded-lg border shadow-sm">
@@ -231,6 +269,13 @@ export default function PreAuthorizationPage() {
                     </table>
                 </div>
             </div>
+
+            {/* Pre-Authorization Modal */}
+            <PreAuthModal
+                isOpen={showModal}
+                onClose={() => setShowModal(false)}
+                onSuccess={loadPreAuths}
+            />
         </div>
     );
 }

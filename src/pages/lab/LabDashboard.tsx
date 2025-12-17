@@ -1,244 +1,190 @@
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Activity, AlertTriangle, CheckCircle, Clock, TestTube, ArrowRight, Package } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  FlaskConical, 
-  Clock, 
-  CheckCircle, 
-  AlertTriangle,
-} from 'lucide-react';
+import { useLabStatistics, usePendingLabOrders, useCriticalLabResults } from '@/hooks/useLabHooks';
+import { format, parseISO } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
 
 const LabDashboard = () => {
   const navigate = useNavigate();
-
-  // Statistics data - would come from API in a real application
-  const stats = [
-    { title: "Today's Tests", value: 24, icon: <FlaskConical className="h-5 w-5 text-blue-600" />, color: 'bg-blue-100' },
-    { title: "Pending Tests", value: 12, icon: <Clock className="h-5 w-5 text-yellow-600" />, color: 'bg-yellow-100' },
-    { title: "Completed Today", value: 10, icon: <CheckCircle className="h-5 w-5 text-green-600" />, color: 'bg-green-100' },
-    { title: "Critical Results", value: 2, icon: <AlertTriangle className="h-5 w-5 text-red-600" />, color: 'bg-red-100' }
-  ];
-
-  // Recent activities - would come from API in a real application
-  const recentActivities = [
-    { 
-      id: 1, 
-      action: 'Completed CBC for Patient #P-10235', 
-      time: '10 minutes ago',
-      icon: <FlaskConical className="h-4 w-4 text-blue-600" />,
-      iconBg: 'bg-blue-100'
-    },
-    { 
-      id: 2, 
-      action: 'Critical result for Troponin I (Patient #P-10239)', 
-      time: '25 minutes ago',
-      icon: <AlertTriangle className="h-4 w-4 text-red-600" />,
-      iconBg: 'bg-red-100'
-    },
-    { 
-      id: 3, 
-      action: 'Verified Lipid Profile results for Patient #P-10238', 
-      time: '1 hour ago',
-      icon: <CheckCircle className="h-4 w-4 text-green-600" />,
-      iconBg: 'bg-green-100'
-    }
-  ];
-
-  // Test requests data - would come from API in a real application
-  const testRequests = [
-    {
-      id: 'LAB-10245',
-      patient: 'John Smith (P-10237)',
-      testType: 'Complete Blood Count',
-      requestedBy: 'Dr. Sarah Johnson',
-      time: '09:15 AM',
-      priority: 'Routine',
-      priorityColor: 'bg-yellow-100 text-yellow-800',
-      status: 'Pending',
-      statusClass: 'bg-yellow-100 text-yellow-800',
-      actions: ['Process', 'Details']
-    },
-    {
-      id: 'LAB-10246',
-      patient: 'Emily Davis (P-10238)',
-      testType: 'Lipid Profile',
-      requestedBy: 'Dr. Michael Brown',
-      time: '09:30 AM',
-      priority: 'Routine',
-      priorityColor: 'bg-yellow-100 text-yellow-800',
-      status: 'In Progress',
-      statusClass: 'bg-blue-100 text-blue-800',
-      actions: ['Complete', 'Details']
-    },
-    {
-      id: 'LAB-10247',
-      patient: 'Robert Wilson (P-10239)',
-      testType: 'Troponin I',
-      requestedBy: 'Dr. Lisa Taylor',
-      time: '09:45 AM',
-      priority: 'STAT',
-      priorityColor: 'bg-red-100 text-red-800',
-      status: 'Critical',
-      statusClass: 'bg-red-100 text-red-800',
-      actions: ['Verify', 'Details']
-    },
-    {
-      id: 'LAB-10248',
-      patient: 'Maria Garcia (P-10240)',
-      testType: 'Liver Function Test',
-      requestedBy: 'Dr. James Wilson',
-      time: '10:00 AM',
-      priority: 'Routine',
-      priorityColor: 'bg-yellow-100 text-yellow-800',
-      status: 'Completed',
-      statusClass: 'bg-green-100 text-green-800',
-      actions: ['Print', 'Details']
-    }
-  ];
+  const { statistics, loading: statsLoading } = useLabStatistics();
+  const { orders: pendingOrders, loading: pendingLoading } = usePendingLabOrders();
+  const { results: criticalResults, loading: criticalLoading } = useCriticalLabResults();
 
   return (
-    <div>
-      {/* Breadcrumbs */}
-      <div className="text-gray-500 text-sm mb-4">Laboratory &gt; Dashboard</div>
-      
-      {/* Page Header with Date */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Laboratory Dashboard</h1>
-      </div>
-      
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        {stats.map((stat, index) => (
-          <Card key={index} className="border border-gray-200">
-            <CardContent className="p-4">
-              <div className="flex items-center">
-                <div className={`w-12 h-12 ${stat.color} rounded-full flex items-center justify-center mr-3`}>
-                  {stat.icon}
-                </div>
-                <div>
-                  <div className="text-gray-500 text-sm">{stat.title}</div>
-                  <div className="text-2xl font-bold text-gray-800">{stat.value}</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-      
-      {/* Main Panel */}
-      <Card className="border border-gray-200 mb-6">
-        {/* Quick Actions Tabs */}
-        <div className="flex border-b border-gray-200">
-          <div className="px-4 py-3 bg-blue-500 text-white font-semibold">Pending Tests</div>
-          <div className="px-4 py-3 text-gray-500 cursor-pointer" onClick={() => navigate('/lab/results/completed')}>
-            Completed Tests
-          </div>
-          <div className="px-4 py-3 text-gray-500 cursor-pointer" onClick={() => navigate('/lab/results/critical')}>
-            Critical Results
-          </div>
-          <div className="px-4 py-3 text-gray-500 cursor-pointer">Test Catalog</div>
+    <div className="space-y-6 p-6 animate-in fade-in duration-500">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Laboratory Dashboard</h1>
+          <p className="text-muted-foreground mt-1">Welcome back, Lab Technician</p>
         </div>
-        
-        <div className="p-4">
-          {/* Test Requests Table */}
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Test ID</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Test Type</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Requested By</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {testRequests.map((request) => (
-                  <tr key={request.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{request.id}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{request.patient}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{request.testType}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{request.requestedBy}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{request.time}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${request.priorityColor}`}>
-                        {request.priority}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${request.statusClass}`}>
-                        {request.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-blue-600 hover:text-blue-900 mr-2 p-0"
-                      >
-                        {request.actions[0]}
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-gray-600 hover:text-gray-900 p-0"
-                      >
-                        {request.actions[1]}
-                      </Button>
-                    </td>
-                  </tr>
+        <div className="flex gap-2">
+          <Button onClick={() => navigate('/lab/inventory')} variant="outline" className="gap-2">
+            <Package className="h-4 w-4" />
+            Inventory
+          </Button>
+          <Button onClick={() => navigate('/lab/worklist')} className="gap-2 bg-indigo-600 hover:bg-indigo-700">
+            <TestTube className="h-4 w-4" />
+            Process Tests
+          </Button>
+        </div>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card
+          className="cursor-pointer hover:shadow-lg transition-all hover:scale-105 card-accent-blue"
+          onClick={() => navigate('/lab/worklist')}
+        >
+          <CardContent className="p-6 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Total Tests Today</p>
+              <h2 className="text-3xl font-bold text-blue-600">{statsLoading ? '-' : (statistics?.todayTests || 0)}</h2>
+              <p className="text-xs text-muted-foreground mt-1">View details →</p>
+            </div>
+            <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center">
+              <TestTube className="h-6 w-6 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card
+          className="cursor-pointer hover:shadow-lg transition-all hover:scale-105 card-accent-green"
+          onClick={() => navigate('/lab/reports')}
+        >
+          <CardContent className="p-6 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Completed Today</p>
+              <h2 className="text-3xl font-bold text-green-600">{statsLoading ? '-' : (statistics?.completedToday || 0)}</h2>
+              <p className="text-xs text-muted-foreground mt-1">View reports →</p>
+            </div>
+            <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center">
+              <CheckCircle className="h-6 w-6 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card
+          className="cursor-pointer hover:shadow-lg transition-all hover:scale-105 card-accent-orange"
+          onClick={() => navigate('/lab/worklist')}
+        >
+          <CardContent className="p-6 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Pending Tests</p>
+              <h2 className="text-3xl font-bold text-yellow-600">{statsLoading ? '-' : (statistics?.pendingTests || 0)}</h2>
+              <p className="text-xs text-muted-foreground mt-1">View worklist →</p>
+            </div>
+            <div className="h-12 w-12 bg-yellow-100 rounded-full flex items-center justify-center">
+              <Clock className="h-6 w-6 text-yellow-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card
+          className="cursor-pointer hover:shadow-lg transition-all hover:scale-105 card-accent-purple"
+          onClick={() => navigate('/lab/reports?status=critical')}
+        >
+          <CardContent className="p-6 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Critical Results</p>
+              <h2 className="text-3xl font-bold text-red-600">{statsLoading ? '-' : (statistics?.criticalResults || 0)}</h2>
+              <p className="text-xs text-muted-foreground mt-1">View alerts ↓</p>
+            </div>
+            <div className="h-12 w-12 bg-red-100 rounded-full flex items-center justify-center">
+              <AlertTriangle className="h-6 w-6 text-red-600" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Pending Orders */}
+        <Card className="h-full">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <Clock className="h-5 w-5 text-yellow-500" />
+              Pending Orders
+            </CardTitle>
+            <Button variant="ghost" size="sm" onClick={() => navigate('/lab/worklist')} className="text-indigo-600">
+              View All <ArrowRight className="ml-1 h-4 w-4" />
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {pendingLoading ? (
+              <div className="text-center py-8 text-gray-500">Loading pending orders...</div>
+            ) : pendingOrders.length > 0 ? (
+              <div className="space-y-4">
+                {pendingOrders.slice(0, 5).map((order) => (
+                  <div key={order.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
+                        {order.patient_first_name?.[0]}{order.patient_last_name?.[0]}
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">{order.test_name}</p>
+                        <p className="text-xs text-gray-500">
+                          {order.patient_first_name} {order.patient_last_name} • {format(parseISO(order.order_date), 'MMM d, h:mm a')}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+                      Pending
+                    </Badge>
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          </div>
-          
-          {/* Pagination */}
-          <div className="flex items-center justify-between mt-4">
-            <div className="text-sm text-gray-500">
-              Showing <span className="font-medium">1</span> to <span className="font-medium">4</span> of <span className="font-medium">12</span> results
-            </div>
-            <div className="flex space-x-2">
-              <Button variant="outline" size="sm" className="text-sm">Previous</Button>
-              <Button variant="default" size="sm" className="text-sm bg-blue-500">1</Button>
-              <Button variant="outline" size="sm" className="text-sm">2</Button>
-              <Button variant="outline" size="sm" className="text-sm">3</Button>
-              <Button variant="outline" size="sm" className="text-sm">Next</Button>
-            </div>
-          </div>
-        </div>
-      </Card>
-      
-      {/* Recent Activity */}
-      <Card className="border border-gray-200 mb-6">
-        <CardContent className="p-4">
-          <h2 className="text-lg font-bold text-gray-800 mb-4">Recent Activity</h2>
-          <div className="space-y-4">
-            {recentActivities.map((activity) => (
-              <div key={activity.id} className="flex items-start">
-                <div className={`w-8 h-8 ${activity.iconBg} rounded-full flex items-center justify-center mr-3 mt-1`}>
-                  {activity.icon}
-                </div>
-                <div>
-                  <div className="text-sm font-medium text-gray-800">{activity.action}</div>
-                  <div className="text-xs text-gray-500">{activity.time}</div>
-                </div>
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-      
-      {/* Floating Action Button */}
-      <Button 
-        className="fixed bottom-8 right-8 w-14 h-14 rounded-full shadow-lg"
-        style={{ backgroundColor: '#3B82F6' }}
-      >
-        <span className="text-xl font-bold">+</span>
-      </Button>
+            ) : (
+              <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg border border-dashed">
+                No pending orders
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Critical Results */}
+        <Card className="h-full">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+              Recent Critical Results
+            </CardTitle>
+            <Button variant="ghost" size="sm" onClick={() => navigate('/lab/reports?status=critical')} className="text-indigo-600">
+              View All <ArrowRight className="ml-1 h-4 w-4" />
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {criticalLoading ? (
+              <div className="text-center py-8 text-gray-500">Loading critical results...</div>
+            ) : criticalResults.length > 0 ? (
+              <div className="space-y-4">
+                {criticalResults.slice(0, 5).map((result) => (
+                  <div key={result.id} className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-100">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 font-bold">
+                        !
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">{result.test_name}</p>
+                        <p className="text-xs text-gray-500">
+                          {result.patient_first_name} {result.patient_last_name} • {result.result_value} {result.result_unit}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge variant="destructive">Critical</Badge>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg border border-dashed">
+                No critical results recently
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

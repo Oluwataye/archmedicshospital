@@ -28,8 +28,12 @@ apiClient.interceptors.request.use((config) => {
 export class HMOService {
     // HMO Provider Management
     static async getHMOProviders(activeOnly: boolean = true): Promise<HMOProvider[]> {
+        const params: any = {};
+        if (activeOnly) {
+            params.active = true;
+        }
         const response = await apiClient.get('/hmo/providers', {
-            params: { active: activeOnly },
+            params,
         });
         return response.data;
     }
@@ -101,6 +105,17 @@ export class HMOService {
     // Eligibility Verification
     static async verifyEligibility(patientId: string): Promise<EligibilityCheckResult> {
         const response = await apiClient.get(`/hmo/eligibility/${patientId}`);
+        return response.data;
+    }
+
+    static async getMonthlyBillingReport(month: string, year: string, hmoProviderId: string): Promise<any[]> {
+        const response = await apiClient.get('/hmo/reports/monthly-billing', {
+            params: {
+                month,
+                year,
+                hmo_provider_id: hmoProviderId === 'all' ? undefined : hmoProviderId
+            }
+        });
         return response.data;
     }
 

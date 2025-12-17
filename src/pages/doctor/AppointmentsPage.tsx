@@ -26,9 +26,9 @@ interface Appointment {
 
 // Enhanced mock appointment data
 const mockAppointmentDetails: Appointment[] = [
-  { 
-    id: 1, 
-    patientName: 'Jane Smith', 
+  {
+    id: 1,
+    patientName: 'Jane Smith',
     patientId: 'P1001',
     time: '09:00 AM',
     type: 'Follow-up',
@@ -41,9 +41,9 @@ const mockAppointmentDetails: Appointment[] = [
     gender: 'Female',
     lastVisit: '2 weeks ago'
   },
-  { 
-    id: 2, 
-    patientName: 'Robert Johnson', 
+  {
+    id: 2,
+    patientName: 'Robert Johnson',
     patientId: 'P1002',
     time: '10:00 AM',
     type: 'New Patient',
@@ -56,9 +56,9 @@ const mockAppointmentDetails: Appointment[] = [
     gender: 'Male',
     lastVisit: 'First visit'
   },
-  { 
-    id: 3, 
-    patientName: 'Mary Williams', 
+  {
+    id: 3,
+    patientName: 'Mary Williams',
     patientId: 'P1003',
     time: '11:15 AM',
     type: 'Follow-up',
@@ -71,9 +71,9 @@ const mockAppointmentDetails: Appointment[] = [
     gender: 'Female',
     lastVisit: '1 month ago'
   },
-  { 
-    id: 4, 
-    patientName: 'David Brown', 
+  {
+    id: 4,
+    patientName: 'David Brown',
     patientId: 'P1004',
     time: '01:30 PM',
     type: 'Follow-up',
@@ -86,9 +86,9 @@ const mockAppointmentDetails: Appointment[] = [
     gender: 'Male',
     lastVisit: '2 months ago'
   },
-  { 
-    id: 5, 
-    patientName: 'Elizabeth Taylor', 
+  {
+    id: 5,
+    patientName: 'Elizabeth Taylor',
     patientId: 'P1005',
     time: '02:15 PM',
     type: 'New Patient',
@@ -101,9 +101,9 @@ const mockAppointmentDetails: Appointment[] = [
     gender: 'Female',
     lastVisit: 'First visit'
   },
-  { 
-    id: 6, 
-    patientName: 'Michael Davis', 
+  {
+    id: 6,
+    patientName: 'Michael Davis',
     patientId: 'P1006',
     time: '03:30 PM',
     type: 'Follow-up',
@@ -118,11 +118,28 @@ const mockAppointmentDetails: Appointment[] = [
   }
 ];
 
+import { useNavigate } from 'react-router-dom';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from 'sonner';
+
+// ... (keep existing interfaces and mock data)
+
 const AppointmentsPage = () => {
+  const navigate = useNavigate();
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [isConsultationOpen, setIsConsultationOpen] = useState(false);
+  const [isNewAppointmentOpen, setIsNewAppointmentOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('upcoming');
-  
+  const [newAppointmentData, setNewAppointmentData] = useState({
+    patientId: '',
+    date: '',
+    time: '',
+    type: 'Follow-up',
+    reason: ''
+  });
+
   const handleAppointmentSelect = (appointment: any) => {
     const fullAppointment = mockAppointmentDetails.find(a => a.id === appointment.id) || appointment;
     setSelectedAppointment(fullAppointment);
@@ -132,23 +149,44 @@ const AppointmentsPage = () => {
     setIsConsultationOpen(true);
   };
 
+  const handleViewPatientRecord = () => {
+    if (selectedAppointment) {
+      navigate(`/doctor/medical-records?patientId=${selectedAppointment.patientId}`);
+    }
+  };
+
+  const handleCreateAppointment = (e: React.FormEvent) => {
+    e.preventDefault();
+    // In a real app, this would call an API
+    toast.success('Appointment scheduled successfully');
+    setIsNewAppointmentOpen(false);
+    setNewAppointmentData({
+      patientId: '',
+      date: '',
+      time: '',
+      type: 'Follow-up',
+      reason: ''
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Appointments</h1>
-        <Button>New Appointment</Button>
+        <Button onClick={() => setIsNewAppointmentOpen(true)}>New Appointment</Button>
       </div>
-      
+
       <Tabs defaultValue="upcoming" value={activeTab} onValueChange={setActiveTab}>
+        {/* ... (keep existing TabsList and AppointmentCalendar) */}
         <TabsList>
           <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
           <TabsTrigger value="past">Past</TabsTrigger>
           <TabsTrigger value="all">All</TabsTrigger>
         </TabsList>
-        
+
         <div className="mt-6 grid gap-6 md:grid-cols-2">
           <AppointmentCalendar onSelectAppointment={handleAppointmentSelect} />
-          
+
           <Card className="h-full">
             <CardHeader>
               <CardTitle>Appointment Details</CardTitle>
@@ -159,6 +197,7 @@ const AppointmentsPage = () => {
             <CardContent>
               {selectedAppointment ? (
                 <div className="space-y-4">
+                  {/* ... (keep existing appointment details display) */}
                   <div className="flex items-center space-x-4">
                     <div className="h-16 w-16 rounded-full bg-medical-primary/20 flex items-center justify-center">
                       <User className="h-8 w-8 text-medical-primary" />
@@ -170,7 +209,7 @@ const AppointmentsPage = () => {
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-4 py-4">
                     <div className="flex items-center space-x-2">
                       <Clock className="h-4 w-4 text-muted-foreground" />
@@ -189,12 +228,12 @@ const AppointmentsPage = () => {
                       <span className="text-sm">{selectedAppointment.email}</span>
                     </div>
                   </div>
-                  
+
                   <div className="p-4 bg-muted rounded-md">
                     <h4 className="font-medium mb-2">Reason for Visit</h4>
                     <p className="text-sm">{selectedAppointment.reason}</p>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="text-muted-foreground">Age:</span> {selectedAppointment.age}
@@ -209,9 +248,9 @@ const AppointmentsPage = () => {
                       <span className="text-muted-foreground">Last Visit:</span> {selectedAppointment.lastVisit}
                     </div>
                   </div>
-                  
+
                   <div className="pt-4 flex justify-end space-x-2">
-                    <Button variant="outline">View Patient Record</Button>
+                    <Button variant="outline" onClick={handleViewPatientRecord}>View Patient Record</Button>
                     <Button onClick={startConsultation}>Start Consultation</Button>
                   </div>
                 </div>
@@ -228,7 +267,7 @@ const AppointmentsPage = () => {
           </Card>
         </div>
       </Tabs>
-      
+
       {/* Consultation Dialog */}
       <Dialog open={isConsultationOpen} onOpenChange={setIsConsultationOpen}>
         <DialogContent className="max-w-3xl">
@@ -238,11 +277,88 @@ const AppointmentsPage = () => {
               Record consultation details for this appointment
             </DialogDescription>
           </DialogHeader>
-          <ConsultationForm 
+          <ConsultationForm
             patientName={selectedAppointment?.patientName}
             patientId={selectedAppointment?.patientId}
             onClose={() => setIsConsultationOpen(false)}
           />
+        </DialogContent>
+      </Dialog>
+
+      {/* New Appointment Dialog */}
+      <Dialog open={isNewAppointmentOpen} onOpenChange={setIsNewAppointmentOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>New Appointment</DialogTitle>
+            <DialogDescription>
+              Schedule a new appointment for a patient
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleCreateAppointment} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="patient">Patient ID / Name</Label>
+              <Input
+                id="patient"
+                placeholder="Search patient..."
+                value={newAppointmentData.patientId}
+                onChange={(e) => setNewAppointmentData({ ...newAppointmentData, patientId: e.target.value })}
+                required
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="date">Date</Label>
+                <Input
+                  id="date"
+                  type="date"
+                  value={newAppointmentData.date}
+                  onChange={(e) => setNewAppointmentData({ ...newAppointmentData, date: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="time">Time</Label>
+                <Input
+                  id="time"
+                  type="time"
+                  value={newAppointmentData.time}
+                  onChange={(e) => setNewAppointmentData({ ...newAppointmentData, time: e.target.value })}
+                  required
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="type">Type</Label>
+              <Select
+                value={newAppointmentData.type}
+                onValueChange={(value) => setNewAppointmentData({ ...newAppointmentData, type: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="New Patient">New Patient</SelectItem>
+                  <SelectItem value="Follow-up">Follow-up</SelectItem>
+                  <SelectItem value="Check-up">Check-up</SelectItem>
+                  <SelectItem value="Emergency">Emergency</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="reason">Reason for Visit</Label>
+              <Input
+                id="reason"
+                placeholder="Brief description of the issue"
+                value={newAppointmentData.reason}
+                onChange={(e) => setNewAppointmentData({ ...newAppointmentData, reason: e.target.value })}
+                required
+              />
+            </div>
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button type="button" variant="outline" onClick={() => setIsNewAppointmentOpen(false)}>Cancel</Button>
+              <Button type="submit">Schedule Appointment</Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

@@ -1,19 +1,19 @@
 
 import React from 'react';
-import { LayoutDashboard, FlaskConical, FileText, Boxes, ClipboardCheck, Microscope } from 'lucide-react';
+import { LayoutDashboard, FlaskConical, FileText, Boxes, ClipboardCheck, Microscope, ScanBarcode } from 'lucide-react';
 import { NavItem } from '@/types/navigation';
 
 export const getLabtechNavigation = (): NavItem[] => [
   { name: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/lab', isActive: true },
-  { name: 'Test Requests', icon: <FlaskConical size={20} />, path: '/lab/requests' },
-  { 
-    name: 'Results', 
-    icon: <FileText size={20} />, 
-    path: '/lab/results', 
+  { name: 'Worklist', icon: <FlaskConical size={20} />, path: '/lab/worklist' },
+  { name: 'Sample Tracking', icon: <ScanBarcode size={20} />, path: '/lab/samples' },
+  {
+    name: 'Results',
+    icon: <FileText size={20} />,
+    path: '/lab/results',
     children: [
-      { name: 'Pending Results', path: '/lab/results/pending' },
-      { name: 'Completed Results', path: '/lab/results/completed' },
-      { name: 'Critical Results', path: '/lab/results/critical' },
+      { name: 'All Reports', path: '/lab/reports' },
+      { name: 'Critical Results', path: '/lab/reports?status=critical' },
     ]
   },
   { name: 'Inventory', icon: <Boxes size={20} />, path: '/lab/inventory' },

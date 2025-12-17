@@ -1,603 +1,337 @@
 import React, { useState } from 'react';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { 
-  AlertTriangle, 
-  Search,
-  Plus
-} from 'lucide-react';
-import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Search, TestTube, Loader2, Calendar, AlertTriangle, CheckCircle, Clock, Check, ChevronsUpDown } from 'lucide-react';
 import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import * as Pop from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { format, parseISO } from 'date-fns';
+import { useLabResults } from '@/hooks/useLabHooks';
+import { usePatientManagement } from '@/hooks/usePatientManagement';
+import { LabResult } from '@/types/lab';
 
-const LabRequestsPage = () => {
-  // State for filters
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [priorityFilter, setPriorityFilter] = useState('all');
-  const [showNewTestModal, setShowNewTestModal] = useState(false);
-  
-  // State for the new test request form
-  const [newTestRequest, setNewTestRequest] = useState({
-    patient: '',
-    testType: '',
-    department: '',
-    priority: 'Routine',
-    notes: '',
-    specimenType: 'Blood'
+const LabResultsPage = () => {
+  const { patients } = usePatientManagement();
+  const [selectedPatientId, setSelectedPatientId] = useState<string>('');
+  const [openCombobox, setOpenCombobox] = useState(false);
+
+  // Fix: Pass object as filter, destructure results as labResults, and handle undefined
+  const { results: rawLabResults, loading } = useLabResults(
+    selectedPatientId ? { patient_id: selectedPatientId } : undefined
+  );
+
+  const labResults = rawLabResults || [];
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterCategory, setFilterCategory] = useState('all');
+  const [activeTab, setActiveTab] = useState('all');
+
+  // Helper function missing from hook
+  const getResultsByStatus = (status: string) => {
+    return labResults.filter(r => r.status === status);
+  };
+
+  // Get unique categories
+  const categories = ['all', ...Array.from(new Set(labResults.map(r => r.test_category).filter(Boolean)))];
+
+  // Filter results
+  const filteredResults = labResults.filter(result => {
+    const searchMatch = searchTerm === '' ||
+      result.test_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      result.test_code?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const categoryMatch = filterCategory === 'all' || result.test_category === filterCategory;
+
+    const statusMatch = activeTab === 'all' || result.status === activeTab;
+
+    return searchMatch && categoryMatch && statusMatch;
   });
 
-  // Test requests data - would come from API in a real application
-  const [allTestRequests, setAllTestRequests] = useState([
-    {
-      id: 'LAB-10245',
-      patient: 'John Smith (P-10237)',
-      testType: 'Complete Blood Count',
-      department: 'Internal Medicine',
-      requestedBy: 'Dr. Sarah Johnson',
-      time: '09:15 AM',
-      date: 'Apr 27, 2025',
-      priority: 'Routine',
-      priorityColor: 'bg-yellow-100 text-yellow-800',
-      status: 'Pending',
-      statusClass: 'bg-yellow-100 text-yellow-800',
-      notes: 'Patient has reported fatigue and weakness',
-      specimenType: 'Blood',
-      specimenCollected: true,
-      collectedAt: 'Apr 27, 2025, 08:45 AM',
-      collectedBy: 'Nurse Emma Davis'
-    },
-    {
-      id: 'LAB-10246',
-      patient: 'Emily Davis (P-10238)',
-      testType: 'Lipid Profile',
-      department: 'Cardiology',
-      requestedBy: 'Dr. Michael Brown',
-      time: '09:30 AM',
-      date: 'Apr 27, 2025',
-      priority: 'Routine',
-      priorityColor: 'bg-yellow-100 text-yellow-800',
-      status: 'In Progress',
-      statusClass: 'bg-blue-100 text-blue-800',
-      notes: 'Annual checkup',
-      specimenType: 'Blood',
-      specimenCollected: true,
-      collectedAt: 'Apr 27, 2025, 09:00 AM',
-      collectedBy: 'Nurse Robert Johnson'
-    },
-    {
-      id: 'LAB-10247',
-      patient: 'Robert Wilson (P-10239)',
-      testType: 'Troponin I',
-      department: 'Emergency',
-      requestedBy: 'Dr. Lisa Taylor',
-      time: '09:45 AM',
-      date: 'Apr 27, 2025',
-      priority: 'STAT',
-      priorityColor: 'bg-red-100 text-red-800',
-      status: 'Critical',
-      statusClass: 'bg-red-100 text-red-800',
-      notes: 'Patient with severe chest pain',
-      specimenType: 'Blood',
-      specimenCollected: true,
-      collectedAt: 'Apr 27, 2025, 09:30 AM',
-      collectedBy: 'Nurse William Chen'
-    },
-    {
-      id: 'LAB-10248',
-      patient: 'Maria Garcia (P-10240)',
-      testType: 'Liver Function Test',
-      department: 'Gastroenterology',
-      requestedBy: 'Dr. James Wilson',
-      time: '10:00 AM',
-      date: 'Apr 27, 2025',
-      priority: 'Routine',
-      priorityColor: 'bg-yellow-100 text-yellow-800',
-      status: 'Completed',
-      statusClass: 'bg-green-100 text-green-800',
-      notes: 'Follow-up for medication adjustment',
-      specimenType: 'Blood',
-      specimenCollected: true,
-      collectedAt: 'Apr 27, 2025, 09:45 AM',
-      collectedBy: 'Nurse Emma Davis'
-    },
-    {
-      id: 'LAB-10249',
-      patient: 'David Lee (P-10241)',
-      testType: 'Urinalysis',
-      department: 'Nephrology',
-      requestedBy: 'Dr. Anna Martinez',
-      time: '10:15 AM',
-      date: 'Apr 27, 2025',
-      priority: 'Routine',
-      priorityColor: 'bg-yellow-100 text-yellow-800',
-      status: 'Pending',
-      statusClass: 'bg-yellow-100 text-yellow-800',
-      notes: 'Suspected UTI',
-      specimenType: 'Urine',
-      specimenCollected: false,
-      collectedAt: '',
-      collectedBy: ''
-    },
-    {
-      id: 'LAB-10250',
-      patient: 'Jennifer Adams (P-10242)',
-      testType: 'Thyroid Panel',
-      department: 'Endocrinology',
-      requestedBy: 'Dr. Robert Kim',
-      time: '10:30 AM',
-      date: 'Apr 27, 2025',
-      priority: 'Urgent',
-      priorityColor: 'bg-orange-100 text-orange-800',
-      status: 'Pending',
-      statusClass: 'bg-yellow-100 text-yellow-800',
-      notes: 'Patient with symptoms of hypothyroidism',
-      specimenType: 'Blood',
-      specimenCollected: true,
-      collectedAt: 'Apr 27, 2025, 10:15 AM',
-      collectedBy: 'Nurse Robert Johnson'
-    }
-  ]);
+  const selectedPatient = patients.find(p => p.id === selectedPatientId);
 
-  // Filter test requests based on search query and filters
-  const filteredTestRequests = allTestRequests.filter(request => {
-    // Search filter
-    const searchMatch = searchQuery === '' || 
-      request.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      request.patient.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      request.testType.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      request.requestedBy.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    // Status filter
-    const statusMatch = statusFilter === 'all' || 
-      request.status.toLowerCase() === statusFilter.toLowerCase();
-    
-    // Priority filter
-    const priorityMatch = priorityFilter === 'all' || 
-      request.priority.toLowerCase() === priorityFilter.toLowerCase();
-    
-    return searchMatch && statusMatch && priorityMatch;
-  });
-
-  // Handle process test button - implement functionality
-  const handleProcessTest = (testId: string) => {
-    setAllTestRequests(prevTests => 
-      prevTests.map(test => 
-        test.id === testId 
-          ? { ...test, status: 'In Progress', statusClass: 'bg-blue-100 text-blue-800' } 
-          : test
-      )
-    );
-    toast.success(`Started processing test ${testId}`);
-  };
-
-  // Handle view details button
-  const handleViewDetails = (testId: string) => {
-    const test = allTestRequests.find(test => test.id === testId);
-    if (test) {
-      toast.info(`
-        Test ID: ${test.id}
-        Patient: ${test.patient}
-        Test Type: ${test.testType}
-        Status: ${test.status}
-        Notes: ${test.notes}
-      `);
-    }
-  };
-
-  // Handle complete test button
-  const handleCompleteTest = (testId: string) => {
-    setAllTestRequests(prevTests => 
-      prevTests.map(test => 
-        test.id === testId 
-          ? { ...test, status: 'Completed', statusClass: 'bg-green-100 text-green-800' } 
-          : test
-      )
-    );
-    toast.success(`Test ${testId} marked as completed`);
-  };
-
-  // Handle verify test button
-  const handleVerifyTest = (testId: string) => {
-    setAllTestRequests(prevTests => 
-      prevTests.map(test => 
-        test.id === testId 
-          ? { ...test, status: 'Verified', statusClass: 'bg-green-100 text-green-800' } 
-          : test
-      )
-    );
-    toast.success(`Test ${testId} has been verified`);
-  };
-
-  // Handle adding a new test request
-  const handleAddNewTest = () => {
-    setShowNewTestModal(true);
-  };
-
-  // Handle form input changes
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setNewTestRequest({
-      ...newTestRequest,
-      [name]: value
-    });
-  };
-
-  // Handle form submission
-  const handleSubmitNewTest = () => {
-    // Validation
-    if (!newTestRequest.patient || !newTestRequest.testType || !newTestRequest.department) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
-
-    // Generate a new ID - in a real app this would come from the server
-    const newId = `LAB-${10250 + allTestRequests.length}`;
-
-    // Create the new test request object
-    const newTest = {
-      id: newId,
-      patient: newTestRequest.patient,
-      testType: newTestRequest.testType,
-      department: newTestRequest.department,
-      requestedBy: "Dr. Sarah Johnson", // Would be the logged-in user
-      time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-      priority: newTestRequest.priority,
-      priorityColor: newTestRequest.priority === 'STAT' ? 'bg-red-100 text-red-800' : 
-                    newTestRequest.priority === 'Urgent' ? 'bg-orange-100 text-orange-800' : 
-                    'bg-yellow-100 text-yellow-800',
-      status: 'Pending',
-      statusClass: 'bg-yellow-100 text-yellow-800',
-      notes: newTestRequest.notes,
-      specimenType: newTestRequest.specimenType,
-      specimenCollected: false,
-      collectedAt: '',
-      collectedBy: ''
+  const getStatusBadge = (status: string) => {
+    const statusConfig: Record<string, { color: string; icon: React.ReactNode }> = {
+      completed: { color: 'bg-green-100 text-green-800', icon: <CheckCircle className="h-3 w-3" /> },
+      pending: { color: 'bg-yellow-100 text-yellow-800', icon: <Clock className="h-3 w-3" /> },
+      in_progress: { color: 'bg-blue-100 text-blue-800', icon: <TestTube className="h-3 w-3" /> },
+      cancelled: { color: 'bg-gray-100 text-gray-800', icon: <AlertTriangle className="h-3 w-3" /> },
     };
 
-    // Add to the list
-    setAllTestRequests(prev => [...prev, newTest]);
+    const config = statusConfig[status] || statusConfig.pending;
 
-    // Close the modal and reset the form
-    setShowNewTestModal(false);
-    setNewTestRequest({
-      patient: '',
-      testType: '',
-      department: '',
-      priority: 'Routine',
-      notes: '',
-      specimenType: 'Blood'
-    });
-
-    toast.success(`New test request ${newId} created successfully`);
+    return (
+      <Badge className={`${config.color} flex items-center gap-1`}>
+        {config.icon}
+        {status.replace('_', ' ')}
+      </Badge>
+    );
   };
 
+  const getAbnormalFlag = (flag?: string) => {
+    if (!flag || flag === 'normal') return null;
+
+    return (
+      <Badge variant="destructive" className="ml-2">
+        <AlertTriangle className="h-3 w-3 mr-1" />
+        {flag.toUpperCase()}
+      </Badge>
+    );
+  };
+
+  const pendingCount = getResultsByStatus('pending').length;
+  const completedCount = getResultsByStatus('completed').length;
+  const inProgressCount = getResultsByStatus('in_progress').length;
+
   return (
-    <div>
-      {/* Breadcrumbs */}
-      <div className="text-gray-500 text-sm mb-4">Laboratory &gt; Test Requests</div>
-      
-      {/* Page Header with Date */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Test Requests</h1>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">Lab Results</h1>
+          <div className="text-sm text-gray-500 flex items-center mt-1">
+            <span>Health Records</span>
+            <span className="mx-2">›</span>
+            <span className="text-blue-500">Lab Results</span>
+          </div>
+        </div>
       </div>
-      
-      {/* Filters and Search */}
-      <Card className="border border-gray-200 p-4 mb-6">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-grow">
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search by patient name, test ID or type..."
-                className="pl-9"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
+
+      {/* Patient Selection */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Select Patient</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col space-y-4">
+            <Pop.Popover open={openCombobox} onOpenChange={setOpenCombobox}>
+              <Pop.PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={openCombobox}
+                  className="w-full justify-between"
+                >
+                  {selectedPatientId
+                    ? patients.find((patient) => String(patient.id) === selectedPatientId)
+                      ? `${patients.find((patient) => String(patient.id) === selectedPatientId)?.first_name} ${patients.find((patient) => String(patient.id) === selectedPatientId)?.last_name} - ${patients.find((patient) => String(patient.id) === selectedPatientId)?.mrn}`
+                      : "Select patient..."
+                    : "Select patient..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </Pop.PopoverTrigger>
+              <Pop.PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                <Command>
+                  <CommandInput placeholder="Search patient by name or MRN..." />
+                  <CommandEmpty>No patient found.</CommandEmpty>
+                  <CommandGroup>
+                    <CommandList>
+                      {patients.map((patient) => (
+                        <CommandItem
+                          key={patient.id}
+                          value={`${patient.first_name} ${patient.last_name} ${patient.mrn}`}
+                          onSelect={() => {
+                            setSelectedPatientId(String(patient.id) === selectedPatientId ? "" : String(patient.id));
+                            setOpenCombobox(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              selectedPatientId === String(patient.id) ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          <div className="flex flex-col">
+                            <span>{patient.first_name} {patient.last_name}</span>
+                            <span className="text-xs text-muted-foreground">MRN: {patient.mrn}</span>
+                          </div>
+                        </CommandItem>
+                      ))}
+                    </CommandList>
+                  </CommandGroup>
+                </Command>
+              </Pop.PopoverContent>
+            </Pop.Popover>
+
+            {selectedPatient && (
+              <div className="p-4 bg-blue-50 rounded-lg animate-in fade-in-0">
+                <h3 className="font-semibold text-blue-900">
+                  {selectedPatient.first_name} {selectedPatient.last_name}
+                </h3>
+                <p className="text-sm text-blue-700">MRN: {selectedPatient.mrn}</p>
+                <p className="text-sm text-blue-700">DOB: {format(parseISO(selectedPatient.date_of_birth), 'MMM dd, yyyy')}</p>
+              </div>
+            )}
           </div>
-          
-          <div className="md:w-1/6">
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectLabel>Filter by Status</SelectLabel>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="in_progress">In Progress</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="critical">Critical</SelectItem>
-                  <SelectItem value="verified">Verified</SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="md:w-1/6">
-            <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Priority" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectLabel>Filter by Priority</SelectLabel>
-                  <SelectItem value="all">All Priorities</SelectItem>
-                  <SelectItem value="routine">Routine</SelectItem>
-                  <SelectItem value="urgent">Urgent</SelectItem>
-                  <SelectItem value="stat">STAT</SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <Button 
-            onClick={handleAddNewTest} 
-            className="md:w-auto"
-            style={{ backgroundColor: '#3B82F6' }}
-          >
-            <Plus size={16} className="mr-1" />
-            New Test Request
-          </Button>
-        </div>
+        </CardContent>
       </Card>
-      
-      {/* Test Requests List */}
-      <Card className="border border-gray-200 mb-6">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Test ID</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Test Type</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Requested By</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date/Time</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredTestRequests.map((request) => (
-                <tr key={request.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{request.id}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{request.patient}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{request.testType}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{request.requestedBy}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {request.date}, {request.time}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${request.priorityColor}`}>
-                      {request.priority}
-                    </span>
-                    {request.priority === 'STAT' && (
-                      <span className="ml-1">
-                        <AlertTriangle className="h-4 w-4 text-red-500 inline" />
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${request.statusClass}`}>
-                      {request.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {request.status === 'Pending' && (
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-blue-600 hover:text-blue-900 mr-2 p-0"
-                        onClick={() => handleProcessTest(request.id)}
-                      >
-                        Process
-                      </Button>
-                    )}
-                    {request.status === 'In Progress' && (
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-blue-600 hover:text-blue-900 mr-2 p-0"
-                        onClick={() => handleCompleteTest(request.id)}
-                      >
-                        Complete
-                      </Button>
-                    )}
-                    {request.status === 'Critical' && (
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-blue-600 hover:text-blue-900 mr-2 p-0"
-                        onClick={() => handleVerifyTest(request.id)}
-                      >
-                        Verify
-                      </Button>
-                    )}
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="text-gray-600 hover:text-gray-900 p-0"
-                      onClick={() => handleViewDetails(request.id)}
-                    >
-                      Details
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        
-        {/* Empty state if no results */}
-        {filteredTestRequests.length === 0 && (
-          <div className="py-8 text-center text-gray-500">
-            <p>No test requests found matching your criteria.</p>
-          </div>
-        )}
-        
-        {/* Pagination */}
-        {filteredTestRequests.length > 0 && (
-          <div className="flex items-center justify-between p-4">
-            <div className="text-sm text-gray-500">
-              Showing <span className="font-medium">1</span> to <span className="font-medium">{filteredTestRequests.length}</span> of{" "}
-              <span className="font-medium">{filteredTestRequests.length}</span> results
-            </div>
-            <div className="flex space-x-2">
-              <Button variant="outline" size="sm" className="text-sm" disabled>Previous</Button>
-              <Button variant="default" size="sm" className="text-sm bg-blue-500">1</Button>
-              <Button variant="outline" size="sm" className="text-sm" disabled>Next</Button>
-            </div>
-          </div>
-        )}
-      </Card>
-      
-      {/* New Test Request Dialog */}
-      <Dialog open={showNewTestModal} onOpenChange={setShowNewTestModal}>
-        <DialogContent className="sm:max-w-[550px]">
-          <DialogHeader>
-            <DialogTitle>New Test Request</DialogTitle>
-            <DialogDescription>
-              Create a new laboratory test request for a patient.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="patient" className="text-right">
-                Patient *
-              </Label>
-              <Input
-                id="patient"
-                name="patient"
-                placeholder="Enter patient name or ID"
-                className="col-span-3"
-                value={newTestRequest.patient}
-                onChange={handleInputChange}
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="testType" className="text-right">
-                Test Type *
-              </Label>
-              <Input
-                id="testType"
-                name="testType"
-                placeholder="Enter test type"
-                className="col-span-3"
-                value={newTestRequest.testType}
-                onChange={handleInputChange}
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="department" className="text-right">
-                Department *
-              </Label>
-              <Input
-                id="department"
-                name="department"
-                placeholder="Enter department"
-                className="col-span-3"
-                value={newTestRequest.department}
-                onChange={handleInputChange}
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="priority" className="text-right">
-                Priority
-              </Label>
-              <Select 
-                name="priority" 
-                defaultValue={newTestRequest.priority}
-                onValueChange={(value) => handleInputChange({ target: { name: 'priority', value } } as any)}
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select priority" />
+
+      {/* Lab Results */}
+      {selectedPatientId && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle>Lab Results</CardTitle>
+          </CardHeader>
+
+          <CardContent>
+            {/* Filters */}
+            <div className="flex flex-col md:flex-row gap-4 mb-6">
+              <div className="flex-1 relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                <Input
+                  placeholder="Search by test name or code..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+
+              <Select value={filterCategory} onValueChange={setFilterCategory}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Filter by category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Routine">Routine</SelectItem>
-                  <SelectItem value="Urgent">Urgent</SelectItem>
-                  <SelectItem value="STAT">STAT</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category === 'all' ? 'All Categories' : category}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+
+              {(searchTerm || filterCategory !== 'all') && (
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setSearchTerm('');
+                    setFilterCategory('all');
+                  }}
+                >
+                  Clear Filters
+                </Button>
+              )}
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="specimenType" className="text-right">
-                Specimen
-              </Label>
-              <Select 
-                name="specimenType" 
-                defaultValue={newTestRequest.specimenType}
-                onValueChange={(value) => handleInputChange({ target: { name: 'specimenType', value } } as any)}
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select specimen type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Blood">Blood</SelectItem>
-                  <SelectItem value="Urine">Urine</SelectItem>
-                  <SelectItem value="Stool">Stool</SelectItem>
-                  <SelectItem value="CSF">CSF</SelectItem>
-                  <SelectItem value="Sputum">Sputum</SelectItem>
-                  <SelectItem value="Tissue">Tissue</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="notes" className="text-right align-top pt-2">
-                Notes
-              </Label>
-              <Textarea
-                id="notes"
-                name="notes"
-                placeholder="Enter any additional notes or instructions"
-                className="col-span-3"
-                rows={3}
-                value={newTestRequest.notes}
-                onChange={handleInputChange}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowNewTestModal(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSubmitNewTest}>Submit Request</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Floating Action Button */}
-      <Button 
-        className="fixed bottom-8 right-8 w-14 h-14 rounded-full shadow-lg"
-        style={{ backgroundColor: '#3B82F6' }}
-        onClick={handleAddNewTest}
-      >
-        <span className="text-xl font-bold">+</span>
-      </Button>
+
+            {/* Tabs */}
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid w-full grid-cols-4 mb-6">
+                <TabsTrigger value="all">All ({labResults.length})</TabsTrigger>
+                <TabsTrigger value="pending">Pending ({pendingCount})</TabsTrigger>
+                <TabsTrigger value="in_progress">In Progress ({inProgressCount})</TabsTrigger>
+                <TabsTrigger value="completed">Completed ({completedCount})</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value={activeTab}>
+                {loading ? (
+                  <div className="flex items-center justify-center p-10">
+                    <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+                    <span className="ml-2">Loading lab results...</span>
+                  </div>
+                ) : filteredResults.length > 0 ? (
+                  <div className="rounded-md border">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="bg-gray-50 border-b">
+                            <th className="py-3 px-4 text-left">Test Name</th>
+                            <th className="py-3 px-4 text-left">Category</th>
+                            <th className="py-3 px-4 text-left">Order Date</th>
+                            <th className="py-3 px-4 text-left">Result Date</th>
+                            <th className="py-3 px-4 text-left">Result</th>
+                            <th className="py-3 px-4 text-left">Reference Range</th>
+                            <th className="py-3 px-4 text-left">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredResults.map((result) => (
+                            <tr key={result.id} className="border-b hover:bg-gray-50">
+                              <td className="py-3 px-4">
+                                <div>
+                                  <p className="font-medium">{result.test_name}</p>
+                                  {result.test_code && (
+                                    <p className="text-xs text-gray-500">{result.test_code}</p>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="py-3 px-4">
+                                {result.test_category && (
+                                  <Badge variant="outline">{result.test_category}</Badge>
+                                )}
+                              </td>
+                              <td className="py-3 px-4">
+                                <div className="flex items-center gap-1 text-gray-600">
+                                  <Calendar className="h-3 w-3" />
+                                  {format(parseISO(result.order_date), 'MMM dd, yyyy')}
+                                </div>
+                              </td>
+                              <td className="py-3 px-4">
+                                {result.result_date ? (
+                                  <div className="flex items-center gap-1 text-gray-600">
+                                    <Calendar className="h-3 w-3" />
+                                    {format(parseISO(result.result_date), 'MMM dd, yyyy')}
+                                  </div>
+                                ) : (
+                                  <span className="text-gray-400">-</span>
+                                )}
+                              </td>
+                              <td className="py-3 px-4">
+                                {result.result_value ? (
+                                  <div className="flex items-center">
+                                    <span className="font-medium">
+                                      {result.result_value} {result.result_unit}
+                                    </span>
+                                    {getAbnormalFlag(result.abnormal_flag)}
+                                  </div>
+                                ) : (
+                                  <span className="text-gray-400">Pending</span>
+                                )}
+                              </td>
+                              <td className="py-3 px-4">
+                                {result.reference_range ? (
+                                  <span className="text-gray-600 text-xs">
+                                    {result.reference_range}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-400">-</span>
+                                )}
+                              </td>
+                              <td className="py-3 px-4">
+                                {getStatusBadge(result.status)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center p-10 border rounded-md">
+                    <TestTube className="h-10 w-10 mx-auto mb-3 text-gray-400" />
+                    <h3 className="font-medium text-lg mb-2">No lab results found</h3>
+                    <p className="text-gray-500">
+                      {searchTerm || filterCategory !== 'all'
+                        ? 'No results match your search criteria.'
+                        : 'No lab results available for this patient.'}
+                    </p>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
 
-export default LabRequestsPage;
+export default LabResultsPage;

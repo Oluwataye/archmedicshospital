@@ -1,156 +1,156 @@
-
 import React, { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
 import { usePatientManagement } from '@/hooks/usePatientManagement';
-
-// Import refactored components
+import PatientListTable from '@/components/ehr/patient-management/PatientListTable';
+import PatientRegistrationModal from '@/components/ehr/PatientRegistrationModal';
 import PatientManagementHeader from '@/components/ehr/patient-management/PatientManagementHeader';
 import PatientSearchFilters from '@/components/ehr/patient-management/PatientSearchFilters';
-import PatientListTable from '@/components/ehr/patient-management/PatientListTable';
-import PatientsTablePagination from '@/components/ehr/patient-management/PatientsTablePagination';
 import PatientOverviewStats from '@/components/ehr/patient-management/PatientOverviewStats';
-
-// Import modals
-import PatientRegistrationModal from '@/components/ehr/PatientRegistrationModal';
+import PatientsTablePagination from '@/components/ehr/patient-management/PatientsTablePagination';
 import MedicalHistoryModal from '@/components/ehr/MedicalHistoryModal';
 import ShareRecordsModal from '@/components/ehr/ShareRecordsModal';
-import PatientStatisticsModal from '@/components/ehr/PatientStatisticsModal';
 import WardAssignmentModal from '@/components/ehr/WardAssignmentModal';
+import PatientStatisticsModal from '@/components/ehr/PatientStatisticsModal';
 
 const PatientManagementPage = () => {
-  // Use the custom hook for patient management
   const {
     patients,
     filteredPatients,
+    loading,
     searchTerm,
     setSearchTerm,
     statusFilter,
     setStatusFilter,
     genderFilter,
     setGenderFilter,
-    selectedPatient,
-    setSelectedPatient,
     handleNewPatientSave,
+    handleUpdatePatient,
     handleDeletePatient,
-    handleEditPatient,
     handleExportPatientList
   } = usePatientManagement();
 
-  // Modal states
   const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false);
-  const [isMedicalHistoryModalOpen, setIsMedicalHistoryModalOpen] = useState(false);
-  const [isShareRecordsModalOpen, setIsShareRecordsModalOpen] = useState(false);
-  const [isStatisticsModalOpen, setIsStatisticsModalOpen] = useState(false);
-  const [isWardAssignmentModalOpen, setIsWardAssignmentModalOpen] = useState(false);
+  const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
 
-  // Handle adding a new patient
-  const handleAddPatient = () => {
-    setIsRegistrationModalOpen(true);
-  };
+  // Action Modals State
+  const [selectedPatient, setSelectedPatient] = useState<any>(null);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isWardModalOpen, setIsWardModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // Handle view medical history
+  // Handlers
   const handleViewMedicalHistory = (patient: any) => {
     setSelectedPatient(patient);
-    setIsMedicalHistoryModalOpen(true);
+    setIsHistoryModalOpen(true);
   };
 
-  // Handle sharing records
   const handleShareRecords = (patient: any) => {
     setSelectedPatient(patient);
-    setIsShareRecordsModalOpen(true);
+    setIsShareModalOpen(true);
   };
 
-  // Handle ward assignment
   const handleWardAssignment = (patient: any) => {
     setSelectedPatient(patient);
-    setIsWardAssignmentModalOpen(true);
+    setIsWardModalOpen(true);
+  };
+
+  const handleEditPatient = (id: string) => {
+    const patient = patients.find(p => p.id === id);
+    if (patient) {
+      setSelectedPatient(patient);
+      setIsEditModalOpen(true);
+    }
   };
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <PatientManagementHeader 
-        onAddPatient={handleAddPatient}
-        onViewStatistics={() => setIsStatisticsModalOpen(true)}
+    <div className="space-y-6 p-6 pb-16">
+      <PatientManagementHeader
+        onAddPatient={() => {
+          setSelectedPatient(null);
+          setIsRegistrationModalOpen(true);
+        }}
+        onViewStatistics={() => setIsStatsModalOpen(true)}
       />
 
-      {/* Modals */}
-      <PatientRegistrationModal
-        open={isRegistrationModalOpen}
-        onOpenChange={setIsRegistrationModalOpen}
-        onSave={handleNewPatientSave}
+      <PatientOverviewStats
+        patients={patients}
+        onViewStatistics={() => setIsStatsModalOpen(true)}
       />
-      
+
+      <div className="space-y-4">
+        <PatientSearchFilters
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+          genderFilter={genderFilter}
+          setGenderFilter={setGenderFilter}
+          onExport={handleExportPatientList}
+        />
+
+        <PatientListTable
+          patients={filteredPatients}
+          onViewMedicalHistory={handleViewMedicalHistory}
+          onEditPatient={handleEditPatient}
+          onShareRecords={handleShareRecords}
+          onWardAssignment={handleWardAssignment}
+          onDeletePatient={handleDeletePatient}
+        />
+
+        <PatientsTablePagination
+          totalCount={filteredPatients.length}
+          currentPage={1}
+        />
+      </div>
+
+      {/* Registration / Edit Modal */}
+      <PatientRegistrationModal
+        open={isRegistrationModalOpen || isEditModalOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsRegistrationModalOpen(false);
+            setIsEditModalOpen(false);
+            setSelectedPatient(null);
+          }
+        }}
+        onSave={(data) => {
+          if (isEditModalOpen && selectedPatient) {
+            handleUpdatePatient(selectedPatient.id, data);
+          } else {
+            handleNewPatientSave(data);
+          }
+        }}
+        patient={isEditModalOpen ? selectedPatient : undefined}
+      />
+
       {selectedPatient && (
         <>
           <MedicalHistoryModal
-            open={isMedicalHistoryModalOpen}
-            onOpenChange={setIsMedicalHistoryModalOpen}
+            open={isHistoryModalOpen}
+            onOpenChange={setIsHistoryModalOpen}
             patientId={selectedPatient.id}
             patientName={selectedPatient.name}
           />
-          
+
           <ShareRecordsModal
-            open={isShareRecordsModalOpen}
-            onOpenChange={setIsShareRecordsModalOpen}
+            open={isShareModalOpen}
+            onOpenChange={setIsShareModalOpen}
             patientId={selectedPatient.id}
             patientName={selectedPatient.name}
           />
-          
+
           <WardAssignmentModal
-            open={isWardAssignmentModalOpen}
-            onOpenChange={setIsWardAssignmentModalOpen}
+            open={isWardModalOpen}
+            onOpenChange={setIsWardModalOpen}
             patientId={selectedPatient.id}
             patientName={selectedPatient.name}
           />
         </>
       )}
-      
+
       <PatientStatisticsModal
-        open={isStatisticsModalOpen}
-        onOpenChange={setIsStatisticsModalOpen}
-      />
-
-      {/* Patient Management Card */}
-      <Card>
-        <CardContent className="pt-6">
-          {/* Search and Filters */}
-          <PatientSearchFilters
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            statusFilter={statusFilter}
-            setStatusFilter={setStatusFilter}
-            genderFilter={genderFilter}
-            setGenderFilter={setGenderFilter}
-            onExport={handleExportPatientList}
-          />
-
-          {/* Patient List Table */}
-          <div className="mt-6">
-            <PatientListTable
-              patients={filteredPatients}
-              onViewMedicalHistory={handleViewMedicalHistory}
-              onEditPatient={handleEditPatient}
-              onShareRecords={handleShareRecords}
-              onWardAssignment={handleWardAssignment}
-              onDeletePatient={handleDeletePatient}
-            />
-
-            {/* Pagination */}
-            {filteredPatients.length > 0 && (
-              <PatientsTablePagination
-                totalCount={filteredPatients.length}
-                currentPage={1}
-              />
-            )}
-          </div>
-        </CardContent>
-      </Card>
-      
-      {/* Patient Statistics Dashboard */}
-      <PatientOverviewStats
-        patients={patients}
-        onViewStatistics={() => setIsStatisticsModalOpen(true)}
+        open={isStatsModalOpen}
+        onOpenChange={setIsStatsModalOpen}
       />
     </div>
   );

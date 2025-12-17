@@ -11,6 +11,9 @@ const AppLayout: React.FC = () => {
                 <Header />
                 <main className="flex-1 p-4 md:p-6 overflow-y-auto bg-muted/10">
                     <Outlet />
+                    <footer className="mt-8 py-4 text-center text-xs text-muted-foreground border-t border-border/50">
+                        2025 © T-Tech Solutions
+                    </footer>
                 </main>
             </div>
         </div>

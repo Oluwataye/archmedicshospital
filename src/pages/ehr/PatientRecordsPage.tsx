@@ -2,8 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from "sonner";
 import { healthRecordsService } from '@/services/healthRecordsService';
+import { ApiService } from '@/services/apiService';
 import { FileText, Activity, ListFilter, AlertTriangle, Clock } from 'lucide-react';
 import { TabsContent } from '@/components/ui/tabs';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Import refactored components
 import PageHeader from '@/components/ehr/PageHeader';
@@ -20,50 +23,7 @@ import AllergiesTab from '@/components/ehr/AllergiesTab';
 import MedicalHistoryTab from '@/components/ehr/MedicalHistoryTab';
 
 // Sample patients data
-const patientsData = [
-  {
-    id: 'P-10237',
-    name: 'John Smith',
-    age: 42,
-    gender: 'Male',
-    dob: '10/15/1982',
-    address: '123 Main St, Anytown, CA',
-    phone: '(555) 123-4567',
-    email: 'john.smith@email.com',
-    status: 'Active',
-    lastVisit: 'Apr 25, 2025',
-    doctor: 'Dr. Johnson',
-    records: 3
-  },
-  {
-    id: 'P-10892',
-    name: 'Emily Davis',
-    age: 35,
-    gender: 'Female',
-    dob: '03/22/1990',
-    address: '456 Oak Ave, Somewhere, CA',
-    phone: '(555) 987-6543',
-    email: 'emily.davis@email.com',
-    status: 'Follow-up',
-    lastVisit: 'Apr 22, 2025',
-    doctor: 'Dr. Chen',
-    records: 5
-  },
-  {
-    id: 'P-10745',
-    name: 'Michael Brown',
-    age: 58,
-    gender: 'Male',
-    dob: '11/07/1966',
-    address: '789 Pine Rd, Nowhere, CA',
-    phone: '(555) 456-7890',
-    email: 'michael.brown@email.com',
-    status: 'New',
-    lastVisit: 'Today',
-    doctor: 'Dr. Wilson',
-    records: 1
-  },
-];
+
 
 // Sample vital signs data - this will be replaced by records from our service
 const defaultVitalSigns = {
@@ -75,10 +35,14 @@ const defaultVitalSigns = {
 };
 
 const PatientRecordsPage = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [department, setDepartment] = useState('all');
   const [patientStatus, setPatientStatus] = useState('all');
-  const [selectedPatient, setSelectedPatient] = useState(patientsData[0]);
+  const [patients, setPatients] = useState<any[]>([]);
+  const [selectedPatient, setSelectedPatient] = useState<any | null>(null);
   const [activeTab, setActiveTab] = useState('all');
   const [isNewRecordFormOpen, setIsNewRecordFormOpen] = useState(false);
   const [patientRecords, setPatientRecords] = useState<any[]>([]);
@@ -86,51 +50,131 @@ const PatientRecordsPage = () => {
   const [allergies, setAllergies] = useState<any[]>([]);
   const [procedures, setProcedures] = useState<any[]>([]);
   const [medicalHistory, setMedicalHistory] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Load patients from API
+  useEffect(() => {
+    loadPatients();
+  }, [debouncedSearchTerm, department, patientStatus]);
+
+  const loadPatients = async () => {
+    try {
+      setLoading(true);
+      const params: any = {};
+      if (debouncedSearchTerm) params.search = debouncedSearchTerm;
+      if (department !== 'all') params.department = department;
+      if (patientStatus !== 'all') params.status = patientStatus;
+
+      const response = await ApiService.getPatients(params);
+      const patientsList = response.data || [];
+
+      // Map API data to component structure
+      const mappedPatients = patientsList.map((p: any) => ({
+        id: p.id,
+        mrn: p.mrn, // Ensure MRN is passed
+        name: `${p.first_name} ${p.last_name}`,
+        age: p.date_of_birth ? new Date().getFullYear() - new Date(p.date_of_birth).getFullYear() : 'N/A',
+        gender: p.gender,
+        dob: p.date_of_birth,
+        address: p.address,
+        phone: p.phone,
+        email: p.email,
+        status: 'Active', // Default or from API if available
+        lastVisit: 'N/A',
+        doctor: 'N/A',
+        records: 0
+      }));
+
+      setPatients(mappedPatients);
+
+      // If we have patients but none selected, select the first one (optional, maybe better not to auto-select for search)
+      if (mappedPatients.length > 0 && !selectedPatient && !debouncedSearchTerm) {
+        // setSelectedPatient(mappedPatients[0]); 
+      }
+    } catch (error) {
+      console.error('Error loading patients:', error);
+      toast.error('Failed to search patients');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Load patient records when selected patient changes
   useEffect(() => {
     if (selectedPatient) {
+      // If doctor or nurse, navigate immediately to their EMR view
+      if (user?.role === 'doctor' || user?.role === 'admin' || user?.role === 'nurse') {
+        navigate(`/doctor/patient-emr/${selectedPatient.id}`);
+        return;
+      }
+      loadPatientData();
+    }
+  }, [selectedPatient, user, navigate]);
+
+  const loadPatientData = async () => {
+    if (!selectedPatient) return;
+
+    try {
+      // Get all records from healthRecordsService (mock for now)
       const records = healthRecordsService.getRecordsByPatient(selectedPatient.id);
       setPatientRecords(records);
-      
-      // Get vital signs records
-      const vitals = healthRecordsService.getRecordsByType(selectedPatient.id, 'vital-signs');
+
+      // Get REAL vital signs from API
+      const vitalsData = await ApiService.getPatientVitalHistory(selectedPatient.id);
+      const vitals = Array.isArray(vitalsData) ? vitalsData : [];
+
       if (vitals.length > 0) {
-        const latestVital = vitals[vitals.length - 1];
+        const latestVital = vitals[0]; // Already sorted by date desc from API
         setVitalSigns({
-          bloodPressure: latestVital.bloodPressure || defaultVitalSigns.bloodPressure,
-          heartRate: latestVital.heartRate || defaultVitalSigns.heartRate,
-          temperature: latestVital.temperature || defaultVitalSigns.temperature,
-          oxygenSaturation: latestVital.oxygenSaturation || defaultVitalSigns.oxygenSaturation,
-          recordedTime: latestVital.date ? new Date(latestVital.date).toLocaleString() : defaultVitalSigns.recordedTime
+          bloodPressure: latestVital.systolic_bp && latestVital.diastolic_bp
+            ? `${latestVital.systolic_bp}/${latestVital.diastolic_bp}`
+            : defaultVitalSigns.bloodPressure,
+          heartRate: latestVital.heart_rate?.toString() || defaultVitalSigns.heartRate,
+          temperature: latestVital.temperature?.toString() || defaultVitalSigns.temperature,
+          oxygenSaturation: latestVital.oxygen_saturation?.toString() || defaultVitalSigns.oxygenSaturation,
+          recordedTime: latestVital.recorded_at
+            ? new Date(latestVital.recorded_at).toLocaleString()
+            : defaultVitalSigns.recordedTime
         });
       } else {
         setVitalSigns(defaultVitalSigns);
       }
 
-      // Get allergies records
+      // Get Allergies (Real-ish or Mock)
+      // fetch real allergies if endpoint exists, else fallback
       const allergyRecords = healthRecordsService.getRecordsByType(selectedPatient.id, 'allergies');
       setAllergies(allergyRecords);
 
-      // Get procedures records
+      // Get Procedures
       const procedureRecords = healthRecordsService.getRecordsByType(selectedPatient.id, 'procedures');
       setProcedures(procedureRecords);
 
-      // Get medical history records
+      // Get History
       const historyRecords = healthRecordsService.getRecordsByType(selectedPatient.id, 'history');
       setMedicalHistory(historyRecords);
+    } catch (error) {
+      console.error('Error loading patient data:', error);
+      setVitalSigns(defaultVitalSigns);
     }
-  }, [selectedPatient]);
+  };
 
   const handleSaveRecord = (record: any) => {
     const savedRecord = healthRecordsService.addRecord(record);
-    
+
     // Update local state based on record type
     setPatientRecords([...patientRecords, savedRecord]);
-    
+
     // Close the form
     setIsNewRecordFormOpen(false);
-    
+
     // Refresh specific record type data
     if (record.recordType === 'vital-signs') {
       setVitalSigns({
@@ -179,29 +223,39 @@ const PatientRecordsPage = () => {
         {/* Patient Records Content */}
         <div className="p-4">
           {isNewRecordFormOpen ? (
-            <NewRecordForm 
-              patientId={selectedPatient.id} 
-              patientName={selectedPatient.name}
+            <NewRecordForm
+              patientId={selectedPatient?.id || ''}
+              patientName={selectedPatient?.name || ''}
               onSave={handleSaveRecord}
               onCancel={() => setIsNewRecordFormOpen(false)}
             />
           ) : (
             <>
+              {loading && <div className="text-center py-4">Searching patients...</div>}
+
+              {!loading && patients.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  {searchTerm ? 'No patients found matching your search.' : 'Enter a name or MRN to search for a patient.'}
+                </div>
+              )}
+
               <RecordTabs activeTab={activeTab} onTabChange={setActiveTab}>
                 {/* All Records Tab Content */}
                 <TabsContent value="all" className="space-y-6">
                   {/* Patient Cards Grid */}
-                  <PatientCardsList
-                    patients={patientsData}
-                    selectedPatient={selectedPatient}
-                    onSelectPatient={setSelectedPatient}
-                  />
+                  {patients.length > 0 && (
+                    <PatientCardsList
+                      patients={patients}
+                      selectedPatient={selectedPatient}
+                      onSelectPatient={setSelectedPatient}
+                    />
+                  )}
 
-                  {/* Selected Patient Record Details */}
-                  {selectedPatient && (
+                  {/* Selected Patient Record Details - Only render if logic didn't navigate away (e.g. for non-doctors) */}
+                  {selectedPatient && user?.role !== 'doctor' && (
                     <Card>
                       {/* Patient Header */}
-                      <PatientInfoCard 
+                      <PatientInfoCard
                         patient={selectedPatient}
                         onEdit={() => toast.info("Edit patient information")}
                         onPrint={() => toast.info("Print patient records")}
@@ -235,37 +289,45 @@ const PatientRecordsPage = () => {
 
                 {/* Vital Signs Tab Content */}
                 <TabsContent value="vital-signs">
-                  <VitalSignsTab
-                    patientId={selectedPatient.id}
-                    patientName={selectedPatient.name}
-                    vitalSigns={vitalSigns}
-                    onAddRecordClick={handleAddTabSpecificRecord}
-                  />
+                  {selectedPatient ? (
+                    <VitalSignsTab
+                      patientId={selectedPatient.id}
+                      patientName={selectedPatient.name}
+                      vitalSigns={vitalSigns}
+                      onAddRecordClick={handleAddTabSpecificRecord}
+                    />
+                  ) : <div className="text-center p-4">Select a patient to view details</div>}
                 </TabsContent>
 
                 {/* Procedures Tab Content */}
                 <TabsContent value="procedures">
-                  <ProceduresTab
-                    patientId={selectedPatient.id}
-                    procedures={procedures}
-                    onAddRecordClick={handleAddTabSpecificRecord}
-                  />
+                  {selectedPatient ? (
+                    <ProceduresTab
+                      patientId={selectedPatient.id}
+                      procedures={procedures}
+                      onAddRecordClick={handleAddTabSpecificRecord}
+                    />
+                  ) : <div className="text-center p-4">Select a patient to view details</div>}
                 </TabsContent>
 
                 {/* Allergies Tab Content */}
                 <TabsContent value="allergies">
-                  <AllergiesTab
-                    allergies={allergies}
-                    onAddRecordClick={handleAddTabSpecificRecord}
-                  />
+                  {selectedPatient ? (
+                    <AllergiesTab
+                      allergies={allergies}
+                      onAddRecordClick={handleAddTabSpecificRecord}
+                    />
+                  ) : <div className="text-center p-4">Select a patient to view details</div>}
                 </TabsContent>
 
                 {/* Medical History Tab Content */}
                 <TabsContent value="history">
-                  <MedicalHistoryTab
-                    medicalHistory={medicalHistory}
-                    onAddRecordClick={handleAddTabSpecificRecord}
-                  />
+                  {selectedPatient ? (
+                    <MedicalHistoryTab
+                      medicalHistory={medicalHistory}
+                      onAddRecordClick={handleAddTabSpecificRecord}
+                    />
+                  ) : <div className="text-center p-4">Select a patient to view details</div>}
                 </TabsContent>
               </RecordTabs>
             </>

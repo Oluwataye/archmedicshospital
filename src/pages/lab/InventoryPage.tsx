@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, AlertTriangle, ShoppingCart } from 'lucide-react';
+import { Search, AlertTriangle, ShoppingCart, Edit, Trash2, Download } from 'lucide-react';
 import { toast } from "sonner";
 import {
   Select,
@@ -14,13 +14,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import AddInventoryItemModal from '@/components/lab/AddInventoryItemModal';
+import EditInventoryItemModal from '@/components/lab/EditInventoryItemModal';
+import DeleteConfirmationDialog from '@/components/lab/DeleteConfirmationDialog';
 
 const InventoryPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<any | null>(null);
 
-  // Inventory data - would come from API in a real application
-  const allInventoryItems = [
+  // Inventory data - managed as state
+  const [allInventoryItems, setAllInventoryItems] = useState([
     {
       id: 'INV-001',
       name: 'CBC Test Tubes',
@@ -125,18 +132,18 @@ const InventoryPage = () => {
       statusColor: 'bg-yellow-100 text-yellow-800',
       lastRestock: 'Mar 05, 2025'
     }
-  ];
+  ]);
 
   // Filter inventory items based on search query and category
   const filteredInventoryItems = allInventoryItems.filter(item => {
-    const searchMatch = searchQuery === '' || 
+    const searchMatch = searchQuery === '' ||
       item.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.category.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const categoryMatch = categoryFilter === 'all' || 
+
+    const categoryMatch = categoryFilter === 'all' ||
       item.category === categoryFilter;
-    
+
     return searchMatch && categoryMatch;
   });
 
@@ -155,19 +162,118 @@ const InventoryPage = () => {
 
   // Handle adding a new inventory item
   const handleAddItem = () => {
-    toast.info("Adding new inventory item");
+    setIsAddModalOpen(true);
+  };
+
+  // Handle item added from modal
+  const handleItemAdded = (newItem: any) => {
+    setAllInventoryItems(prev => [newItem, ...prev]);
+  };
+
+  // Handle edit item
+  const handleEditItem = (item: any) => {
+    setSelectedItem(item);
+    setIsEditModalOpen(true);
+  };
+
+  // Handle item updated from modal
+  const handleItemUpdated = (updatedItem: any) => {
+    setAllInventoryItems(prev =>
+      prev.map(item => (item.id === updatedItem.id ? updatedItem : item))
+    );
+  };
+
+  // Handle delete item
+  const handleDeleteItem = (item: any) => {
+    setSelectedItem(item);
+    setIsDeleteDialogOpen(true);
+  };
+
+  // Confirm delete
+  const confirmDelete = () => {
+    if (selectedItem) {
+      setAllInventoryItems(prev => prev.filter(item => item.id !== selectedItem.id));
+      toast.success(`${selectedItem.name} deleted successfully`);
+      setIsDeleteDialogOpen(false);
+      setSelectedItem(null);
+    }
+  };
+
+  // Export to CSV
+  const handleExportToCSV = () => {
+    try {
+      // Prepare CSV headers
+      const headers = [
+        'ID',
+        'Name',
+        'Category',
+        'Current Stock',
+        'Min Level',
+        'Max Level',
+        'Location',
+        'Expiry Date',
+        'Status',
+        'Last Restock',
+      ];
+
+      // Prepare CSV rows
+      const rows = filteredInventoryItems.map(item => [
+        item.id,
+        item.name,
+        item.category,
+        item.currentStock,
+        item.minLevel,
+        item.maxLevel,
+        item.location,
+        item.expiryDate,
+        item.status,
+        item.lastRestock,
+      ]);
+
+      // Combine headers and rows
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+      ].join('\n');
+
+      // Create blob and download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+
+      link.setAttribute('href', url);
+      link.setAttribute('download', `lab_inventory_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success('Inventory exported successfully');
+    } catch (error) {
+      console.error('Error exporting inventory:', error);
+      toast.error('Failed to export inventory');
+    }
   };
 
   return (
     <div>
       {/* Breadcrumbs */}
       <div className="text-gray-500 text-sm mb-4">Laboratory &gt; Inventory</div>
-      
+
       {/* Page Header */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Laboratory Inventory</h1>
+        <Button
+          onClick={handleExportToCSV}
+          variant="outline"
+          className="flex items-center gap-2"
+        >
+          <Download className="h-4 w-4" />
+          Export to CSV
+        </Button>
       </div>
-      
+
       {/* Alert for low stock items */}
       <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-6">
         <div className="flex">
@@ -176,10 +282,10 @@ const InventoryPage = () => {
           </div>
           <div className="ml-3">
             <p className="text-sm text-yellow-700">
-              <span className="font-bold">Inventory Alert:</span> 3 items are at or below minimum stock levels. 
-              <Button 
-                variant="link" 
-                size="sm" 
+              <span className="font-bold">Inventory Alert:</span> 3 items are at or below minimum stock levels.
+              <Button
+                variant="link"
+                size="sm"
                 className="text-yellow-800 p-0"
                 onClick={() => setCategoryFilter('all')}
               >
@@ -189,7 +295,7 @@ const InventoryPage = () => {
           </div>
         </div>
       </div>
-      
+
       {/* Filters and Search */}
       <Card className="border border-gray-200 p-4 mb-6">
         <div className="flex flex-col md:flex-row gap-4">
@@ -204,7 +310,7 @@ const InventoryPage = () => {
               />
             </div>
           </div>
-          
+
           <div className="md:w-1/5">
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger>
@@ -221,9 +327,9 @@ const InventoryPage = () => {
               </SelectContent>
             </Select>
           </div>
-          
-          <Button 
-            onClick={handleAddItem} 
+
+          <Button
+            onClick={handleAddItem}
             className="md:w-auto"
             style={{ backgroundColor: '#3B82F6' }}
           >
@@ -231,7 +337,7 @@ const InventoryPage = () => {
           </Button>
         </div>
       </Card>
-      
+
       {/* Inventory List */}
       <Card className="border border-gray-200 mb-6">
         <div className="overflow-x-auto">
@@ -263,39 +369,51 @@ const InventoryPage = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {(item.status === 'Low Stock' || item.status === 'Critical Low') && (
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-blue-600 hover:text-blue-900 mr-2 p-0"
-                        onClick={() => handleOrderItem(item.id)}
+                    <div className="flex items-center gap-2">
+                      {(item.status === 'Low Stock' || item.status === 'Critical Low') && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-blue-600 hover:text-blue-900 p-0"
+                          onClick={() => handleOrderItem(item.id)}
+                        >
+                          <ShoppingCart className="h-4 w-4 mr-1" />
+                          Order
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-green-600 hover:text-green-900 p-0"
+                        onClick={() => handleEditItem(item)}
                       >
-                        <ShoppingCart className="h-4 w-4 mr-1" />
-                        Order
+                        <Edit className="h-4 w-4 mr-1" />
+                        Edit
                       </Button>
-                    )}
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="text-gray-600 hover:text-gray-900 p-0"
-                      onClick={() => handleViewDetails(item.id)}
-                    >
-                      Details
-                    </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-600 hover:text-red-900 p-0"
+                        onClick={() => handleDeleteItem(item)}
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Delete
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        
+
         {/* Empty state if no items */}
         {filteredInventoryItems.length === 0 && (
           <div className="py-8 text-center text-gray-500">
             <p>No inventory items found matching your criteria.</p>
           </div>
         )}
-        
+
         {/* Pagination */}
         {filteredInventoryItems.length > 0 && (
           <div className="flex items-center justify-between p-4">
@@ -311,7 +429,7 @@ const InventoryPage = () => {
           </div>
         )}
       </Card>
-      
+
       {/* Summary Card */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="p-4 border border-green-200 bg-green-50">
@@ -339,6 +457,29 @@ const InventoryPage = () => {
           </p>
         </Card>
       </div>
+
+      {/* Add Inventory Item Modal */}
+      <AddInventoryItemModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onItemAdded={handleItemAdded}
+      />
+
+      {/* Edit Inventory Item Modal */}
+      <EditInventoryItemModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onItemUpdated={handleItemUpdated}
+        item={selectedItem}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={confirmDelete}
+        itemName={selectedItem?.name || ''}
+      />
     </div>
   );
 };

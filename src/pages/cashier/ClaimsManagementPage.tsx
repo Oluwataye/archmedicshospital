@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import claimsService from '@/services/claimsService';
 import { HMOClaim, ClaimsStatistics } from '@/types/hmo';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
+import ClaimsModal from '@/components/hmo/ClaimsModal';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +19,7 @@ export default function ClaimsManagementPage() {
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState<string>('all');
+    const [showModal, setShowModal] = useState(false);
 
     useEffect(() => {
         loadClaims();
@@ -86,7 +88,7 @@ export default function ClaimsManagementPage() {
                     <h1 className="text-3xl font-bold tracking-tight">Claims Management</h1>
                     <p className="text-muted-foreground mt-1">Manage HMO claims and submissions</p>
                 </div>
-                <Button onClick={() => toast.info('Create claim functionality - integrate with patient billing')}>
+                <Button onClick={() => setShowModal(true)}>
                     <Plus className="h-4 w-4 mr-2" />
                     New Claim
                 </Button>
@@ -94,61 +96,62 @@ export default function ClaimsManagementPage() {
 
             {/* Statistics Cards */}
             {statistics && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <Card>
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                                <FileText className="h-4 w-4" />
-                                Total Claims
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{statistics.total_claims}</div>
-                            <p className="text-xs text-muted-foreground mt-1">
-                                ₦{statistics.total_claim_amount.toLocaleString()}
-                            </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <Card className="card-accent-blue hover:shadow-lg transition-all hover:scale-105">
+                        <CardContent className="p-6 flex items-center justify-between">
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground">Total Claims</p>
+                                <h2 className="text-3xl font-bold text-blue-600">{statistics.total_claims}</h2>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    ₦{(statistics.total_claim_amount || 0).toLocaleString()}
+                                </p>
+                            </div>
+                            <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                <FileText className="h-6 w-6 text-blue-600" />
+                            </div>
                         </CardContent>
                     </Card>
 
-                    <Card>
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                                <Clock className="h-4 w-4" />
-                                Pending
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold text-yellow-600">{statistics.pending_claims}</div>
+                    <Card className="card-accent-orange hover:shadow-lg transition-all hover:scale-105">
+                        <CardContent className="p-6 flex items-center justify-between">
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground">Pending</p>
+                                <h2 className="text-3xl font-bold text-yellow-600">{statistics.pending_claims}</h2>
+                                <p className="text-xs text-muted-foreground mt-1">Awaiting approval</p>
+                            </div>
+                            <div className="h-12 w-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                                <Clock className="h-6 w-6 text-yellow-600" />
+                            </div>
                         </CardContent>
                     </Card>
 
-                    <Card>
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                                <CheckCircle className="h-4 w-4" />
-                                Approved
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold text-green-600">{statistics.approved_claims}</div>
-                            <p className="text-xs text-muted-foreground mt-1">
-                                ₦{statistics.total_approved_amount.toLocaleString()}
-                            </p>
+                    <Card className="card-accent-green hover:shadow-lg transition-all hover:scale-105">
+                        <CardContent className="p-6 flex items-center justify-between">
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground">Approved</p>
+                                <h2 className="text-3xl font-bold text-green-600">{statistics.approved_claims}</h2>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    ₦{(statistics.total_approved_amount || 0).toLocaleString()}
+                                </p>
+                            </div>
+                            <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center">
+                                <CheckCircle className="h-6 w-6 text-green-600" />
+                            </div>
                         </CardContent>
                     </Card>
 
-                    <Card>
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                                <TrendingUp className="h-4 w-4" />
-                                Paid
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold text-purple-600">{statistics.paid_claims}</div>
-                            <p className="text-xs text-muted-foreground mt-1">
-                                ₦{statistics.total_paid_amount.toLocaleString()}
-                            </p>
+                    <Card className="card-accent-purple hover:shadow-lg transition-all hover:scale-105">
+                        <CardContent className="p-6 flex items-center justify-between">
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground">Paid</p>
+                                <h2 className="text-3xl font-bold text-purple-600">{statistics.paid_claims}</h2>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    ₦{(statistics.total_paid_amount || 0).toLocaleString()}
+                                </p>
+                            </div>
+                            <div className="h-12 w-12 bg-purple-100 rounded-full flex items-center justify-center">
+                                <TrendingUp className="h-6 w-6 text-purple-600" />
+                            </div>
                         </CardContent>
                     </Card>
                 </div>
@@ -249,6 +252,16 @@ export default function ClaimsManagementPage() {
                     </Table>
                 </CardContent>
             </Card>
+
+            {/* Claims Modal */}
+            <ClaimsModal
+                isOpen={showModal}
+                onClose={() => setShowModal(false)}
+                onSuccess={() => {
+                    loadClaims();
+                    loadStatistics();
+                }}
+            />
         </div>
     );
 }

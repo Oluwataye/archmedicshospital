@@ -1,10 +1,12 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, AlertTriangle, AlertOctagon, Info, Check, X, ChevronDown } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from '@/hooks/use-toast';
+import { ApiService } from '@/services/apiService';
+import LoadingSpinner from '@/components/common/LoadingSpinner';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -17,65 +19,91 @@ export default function AlertsPage() {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [alertTypeFilter, setAlertTypeFilter] = useState('All');
-  
-  const [alerts] = useState([
-    {
-      id: 'ALT001',
-      type: 'Drug Interaction',
-      severity: 'High',
-      title: 'Warfarin + Aspirin Interaction',
-      description: 'Increased risk of bleeding when these medications are used together',
-      patients: ['John Doe (P-10542)'],
-      medications: ['Warfarin 2mg', 'Aspirin 81mg'],
-      dateDetected: '2025-05-02T10:15:00',
-      resolved: false
-    },
-    {
-      id: 'ALT002',
-      type: 'Allergy',
-      severity: 'Critical',
-      title: 'Patient allergic to prescribed medication',
-      description: 'Patient has documented allergy to penicillin but was prescribed amoxicillin',
-      patients: ['Robert Johnson (P-10687)'],
-      medications: ['Amoxicillin 500mg'],
-      dateDetected: '2025-05-02T09:30:00',
-      resolved: false
-    },
-    {
-      id: 'ALT003',
-      type: 'Dosage',
-      severity: 'Medium',
-      title: 'Dosage exceeds recommendation',
-      description: 'Prescribed dosage exceeds maximum recommendation for patient weight',
-      patients: ['Sarah Miller (P-10398)'],
-      medications: ['Metformin 1000mg'],
-      dateDetected: '2025-05-02T08:45:00',
-      resolved: true
-    },
-    {
-      id: 'ALT004',
-      type: 'Drug Interaction',
-      severity: 'Low',
-      title: 'Potential minor interaction',
-      description: 'Potential minor interaction between metoprolol and escitalopram',
-      patients: ['Emily Wilson (P-10754)'],
-      medications: ['Metoprolol 50mg', 'Escitalopram 10mg'],
-      dateDetected: '2025-05-01T14:30:00',
-      resolved: true
-    },
-    {
-      id: 'ALT005',
-      type: 'Duplicate Therapy',
-      severity: 'Medium',
-      title: 'Duplicate medication class',
-      description: 'Patient is receiving two medications from the same therapeutic class',
-      patients: ['Michael Davis (P-10892)'],
-      medications: ['Lisinopril 10mg', 'Enalapril 5mg'],
-      dateDetected: '2025-05-01T11:45:00',
-      resolved: false
+
+  const [loading, setLoading] = useState(true);
+  const [alerts, setAlerts] = useState<any[]>([]);
+
+  useEffect(() => {
+    loadAlerts();
+  }, []);
+
+  const loadAlerts = async () => {
+    try {
+      setLoading(true);
+      const data = await ApiService.getRecentDrugInteractionAlerts();
+
+      // Parse and flatten data
+      const parsedAlerts: any[] = [];
+
+      data.forEach((check: any) => {
+        const patientName = check.patient_first_name
+          ? `${check.patient_first_name} ${check.patient_last_name} (${check.patient_mrn})`
+          : `Patient ID: ${check.patient_id}`;
+
+        const meds = JSON.parse(check.medications_checked || '[]');
+
+        // Process Interactions
+        const interactions = JSON.parse(check.interactions_found || '[]');
+        interactions.forEach((item: any, idx: number) => {
+          parsedAlerts.push({
+            id: `${check.id}-int-${idx}`,
+            type: 'Drug Interaction',
+            severity: item.severity,
+            title: `${item.drug_a} + ${item.drug_b}`,
+            description: item.description,
+            patients: [patientName],
+            medications: meds,
+            dateDetected: check.checked_at,
+            resolved: check.action_taken !== 'Flagged' // Simple logic for now
+          });
+        });
+
+        // Process Contraindications
+        const contraindications = JSON.parse(check.contraindications_found || '[]');
+        contraindications.forEach((item: any, idx: number) => {
+          parsedAlerts.push({
+            id: `${check.id}-con-${idx}`,
+            type: 'Contraindication',
+            severity: item.severity === 'Absolute' ? 'Critical' : 'High',
+            title: `Contraindication: ${item.drug_name}`,
+            description: item.description,
+            patients: [patientName],
+            medications: [item.drug_name],
+            dateDetected: check.checked_at,
+            resolved: check.action_taken !== 'Flagged'
+          });
+        });
+
+        // Process Allergies
+        const allergies = JSON.parse(check.allergy_alerts || '[]');
+        allergies.forEach((item: any, idx: number) => {
+          parsedAlerts.push({
+            id: `${check.id}-alg-${idx}`,
+            type: 'Allergy',
+            severity: item.cross_sensitivity === 'High' ? 'Critical' : 'Major',
+            title: `Allergy: ${item.drug_name}`,
+            description: item.description,
+            patients: [patientName],
+            medications: [item.drug_name],
+            dateDetected: check.checked_at,
+            resolved: check.action_taken !== 'Flagged'
+          });
+        });
+      });
+
+      setAlerts(parsedAlerts);
+    } catch (error) {
+      console.error('Error loading alerts:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load alerts",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-  ]);
-  
+  };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     toast({
@@ -83,7 +111,7 @@ export default function AlertsPage() {
       description: `Query: ${searchQuery}`,
     });
   };
-  
+
   const resolveAlert = (id: string) => {
     toast({
       title: "Alert Resolved",
@@ -91,7 +119,7 @@ export default function AlertsPage() {
       variant: "default",
     });
   };
-  
+
   const dismissAlert = (id: string) => {
     toast({
       title: "Alert Dismissed",
@@ -99,7 +127,7 @@ export default function AlertsPage() {
       variant: "default",
     });
   };
-  
+
   const getSeverityIcon = (severity: string) => {
     switch (severity) {
       case 'Critical':
@@ -114,7 +142,7 @@ export default function AlertsPage() {
         return null;
     }
   };
-  
+
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case 'Critical':
@@ -129,13 +157,13 @@ export default function AlertsPage() {
         return 'bg-gray-100 text-gray-800';
     }
   };
-  
+
   const filteredAlerts = alerts.filter(alert => {
     // Filter by type
     if (alertTypeFilter !== 'All' && alert.type !== alertTypeFilter) {
       return false;
     }
-    
+
     // Filter by search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -147,13 +175,13 @@ export default function AlertsPage() {
         alert.medications.some(med => med.toLowerCase().includes(query))
       );
     }
-    
+
     return true;
   });
-  
+
   const activeAlerts = filteredAlerts.filter(alert => !alert.resolved);
   const resolvedAlerts = filteredAlerts.filter(alert => alert.resolved);
-  
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleString();
@@ -165,7 +193,7 @@ export default function AlertsPage() {
         <h1 className="text-2xl font-bold text-gray-800">Interactions & Alerts</h1>
         <p className="text-gray-600">Manage medication interactions, allergies, and other clinical alerts</p>
       </div>
-      
+
       <Card className="mb-6">
         <CardHeader className="pb-2">
           <CardTitle>Search & Filter Alerts</CardTitle>
@@ -188,7 +216,7 @@ export default function AlertsPage() {
                 </div>
               </form>
             </div>
-            
+
             <div className="flex items-center">
               <span className="mr-2 text-gray-700">Alert Type:</span>
               <DropdownMenu>
@@ -220,7 +248,7 @@ export default function AlertsPage() {
           </div>
         </CardContent>
       </Card>
-      
+
       <Tabs defaultValue="active" className="w-full">
         <TabsList className="grid grid-cols-2 mb-6">
           <TabsTrigger value="active" className="text-center py-2">
@@ -230,7 +258,7 @@ export default function AlertsPage() {
             Resolved Alerts
           </TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="active">
           {activeAlerts.length === 0 ? (
             <Card>
@@ -280,14 +308,14 @@ export default function AlertsPage() {
                       </div>
                     </div>
                     <div className="flex justify-end space-x-2">
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         className="flex items-center"
                         onClick={() => dismissAlert(alert.id)}
                       >
                         <X className="mr-1 h-4 w-4" /> Dismiss
                       </Button>
-                      <Button 
+                      <Button
                         className="flex items-center"
                         onClick={() => resolveAlert(alert.id)}
                       >
@@ -300,7 +328,7 @@ export default function AlertsPage() {
             </div>
           )}
         </TabsContent>
-        
+
         <TabsContent value="resolved">
           {resolvedAlerts.length === 0 ? (
             <Card>

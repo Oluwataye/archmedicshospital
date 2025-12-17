@@ -4,11 +4,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { 
-  Activity, 
-  Users, 
-  Calendar, 
-  TestTube, 
+import { useHospitalSettings } from '@/contexts/HospitalSettingsContext';
+import {
+  Activity,
+  Users,
+  Calendar,
+  TestTube,
   CreditCard,
   Search,
   Bell,
@@ -47,18 +48,19 @@ const defaultStats: DashboardStats = {
   revenueGrowth: '+8%'
 };
 
-export function EnhancedDashboard({ 
-  stats = defaultStats, 
+export function EnhancedDashboard({
+  stats = defaultStats,
   userRole = 'EHR Manager',
   userName = 'Dr. Smith'
 }: EnhancedDashboardProps) {
-  
+  const { settings } = useHospitalSettings();
+
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">ARCHMEDICS HMS</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{settings?.hospital_name?.toUpperCase() || 'HOSPITAL HMS'}</h1>
           <p className="text-gray-600">Enhanced Dashboard - Welcome, {userName}</p>
         </div>
         <div className="flex items-center space-x-3">
@@ -210,7 +212,7 @@ export function EnhancedDashboard({
               </div>
               <Badge variant="secondary">New</Badge>
             </div>
-            
+
             <div className="flex items-center space-x-4 p-3 bg-red-50 rounded-lg">
               <div className="p-2 bg-red-100 rounded-full">
                 <AlertTriangle className="w-4 h-4 text-red-600" />
@@ -221,7 +223,7 @@ export function EnhancedDashboard({
               </div>
               <Badge variant="destructive">Critical</Badge>
             </div>
-            
+
             <div className="flex items-center space-x-4 p-3 bg-green-50 rounded-lg">
               <div className="p-2 bg-green-100 rounded-full">
                 <Calendar className="w-4 h-4 text-green-600" />

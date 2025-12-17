@@ -1,132 +1,170 @@
-
-import { useState } from 'react';
-import { Search, ChevronDown } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Search, Activity, UserPlus, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { ApiService } from '@/services/apiService';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import LoadingSpinner from '@/components/common/LoadingSpinner';
+import SendToDoctorModal from '@/components/nurse/SendToDoctorModal';
+
+interface Patient {
+  id: string;
+  first_name: string;
+  last_name: string;
+  mrn: string;
+  date_of_birth?: string;
+  gender?: string;
+  phone?: string;
+  email?: string;
+}
 
 export default function PatientsPage() {
-  const [filterStatus, setFilterStatus] = useState('All');
+  const navigate = useNavigate();
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [isSendToDoctorModalOpen, setIsSendToDoctorModalOpen] = useState(false);
 
-  const patients = [
-    { id: 'P-10542', name: 'Alice Johnson', age: 65, room: '204', diagnosis: 'Stroke', status: 'Critical', lastVitals: '10:15 AM' },
-    { id: 'P-10398', name: 'Robert Brown', age: 52, room: '210', diagnosis: 'Diabetes', status: 'Stable', lastVitals: '09:45 AM' },
-    { id: 'P-10687', name: 'Emily Wilson', age: 78, room: '108', diagnosis: 'Pneumonia', status: 'Recovering', lastVitals: '10:00 AM' },
-    { id: 'P-10754', name: 'Michael Davis', age: 43, room: '307', diagnosis: 'Post-Op Care', status: 'Stable', lastVitals: '08:30 AM' },
-    { id: 'P-10892', name: 'Sarah Miller', age: 32, room: '215', diagnosis: 'Pregnancy', status: 'Monitoring', lastVitals: '09:15 AM' },
-  ];
+  useEffect(() => {
+    loadPatients();
+  }, []);
+
+  const loadPatients = async () => {
+    try {
+      setLoading(true);
+      const response = await ApiService.getPatients();
+      // Handle both array and object with data property
+      const patientsData = Array.isArray(response) ? response : (response.data || []);
+      setPatients(patientsData);
+    } catch (error) {
+      console.error('Error loading patients:', error);
+      toast.error('Failed to load patients');
+      setPatients([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRecordVitals = (patient: Patient) => {
+    // Navigate to vitals page with patient pre-selected
+    navigate('/nurse/vitals', { state: { selectedPatient: patient } });
+  };
+
+  const handleSendToDoctor = (patient: Patient) => {
+    setSelectedPatient(patient);
+    setIsSendToDoctorModalOpen(true);
+  };
+
+  const handleAppointmentCreated = () => {
+    setIsSendToDoctorModalOpen(false);
+    setSelectedPatient(null);
+    toast.success('Patient sent to doctor successfully');
+  };
 
   const filteredPatients = patients.filter(patient => {
-    const matchesFilter = filterStatus === 'All' || patient.status === filterStatus;
-    const matchesSearch = patient.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          patient.id.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesFilter && matchesSearch;
+    const searchLower = searchQuery.toLowerCase();
+    return (
+      patient.first_name?.toLowerCase().includes(searchLower) ||
+      patient.last_name?.toLowerCase().includes(searchLower) ||
+      patient.mrn?.toLowerCase().includes(searchLower) ||
+      `${patient.first_name} ${patient.last_name}`.toLowerCase().includes(searchLower)
+    );
   });
 
+  if (loading) {
+    return <LoadingSpinner fullScreen />;
+  }
+
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Admitted Patients</h1>
-        <p className="text-gray-500">View and manage patient information</p>
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Patients</h1>
+          <p className="text-muted-foreground mt-1">View and manage all registered patients</p>
+        </div>
       </div>
 
-      <Card className="mb-6">
-        <CardHeader className="pb-2">
-          <CardTitle>Patient Search & Filters</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-5 w-5 text-gray-500" />
-              </div>
-              <input
-                type="text"
-                placeholder="Search by name or ID..."
-                className="pl-10 pr-4 py-2 w-full border rounded-md"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button 
-                variant={filterStatus === 'All' ? "default" : "outline"}
-                onClick={() => setFilterStatus('All')}
-              >
-                All
-              </Button>
-              <Button 
-                variant={filterStatus === 'Stable' ? "default" : "outline"}
-                onClick={() => setFilterStatus('Stable')}
-              >
-                Stable
-              </Button>
-              <Button 
-                variant={filterStatus === 'Critical' ? "default" : "outline"}
-                onClick={() => setFilterStatus('Critical')}
-              >
-                Critical
-              </Button>
-              <Button 
-                variant={filterStatus === 'Recovering' ? "default" : "outline"}
-                onClick={() => setFilterStatus('Recovering')}
-              >
-                Recovering
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle>Patient List</CardTitle>
+        <CardHeader className="pb-4">
+          <CardTitle>Patient Search</CardTitle>
+          <div className="relative mt-2">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search by name or MRN..."
+              className="pl-9"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
+          <div className="rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Patient ID</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Age</TableHead>
-                  <TableHead>Room</TableHead>
-                  <TableHead>Diagnosis</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Last Vitals</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead>MRN</TableHead>
+                  <TableHead>Patient Name</TableHead>
+                  <TableHead>Gender</TableHead>
+                  <TableHead>Date of Birth</TableHead>
+                  <TableHead>Contact</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredPatients.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-4">
-                      No patients found matching your criteria
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      {searchQuery ? 'No patients found matching your search' : 'No patients registered yet'}
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredPatients.map((patient) => (
-                    <TableRow key={patient.id}>
-                      <TableCell>{patient.id}</TableCell>
-                      <TableCell>{patient.name}</TableCell>
-                      <TableCell>{patient.age}</TableCell>
-                      <TableCell>{patient.room}</TableCell>
-                      <TableCell>{patient.diagnosis}</TableCell>
+                    <TableRow key={patient.id} className="hover:bg-muted/50">
+                      <TableCell className="font-medium">{patient.mrn}</TableCell>
                       <TableCell>
-                        <div className={`px-2 py-1 rounded-full text-xs inline-block font-medium
-                          ${patient.status === 'Critical' ? 'bg-red-100 text-red-600' : 
-                            patient.status === 'Stable' ? 'bg-green-100 text-green-600' :
-                            patient.status === 'Recovering' ? 'bg-blue-100 text-blue-600' :
-                            'bg-yellow-100 text-yellow-600'}`}>
-                          {patient.status}
+                        <div className="font-medium">{patient.first_name} {patient.last_name}</div>
+                      </TableCell>
+                      <TableCell>
+                        {patient.gender ? (
+                          <Badge variant="outline">{patient.gender}</Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {patient.date_of_birth || <span className="text-muted-foreground text-sm">-</span>}
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          {patient.phone && <div>{patient.phone}</div>}
+                          {patient.email && <div className="text-muted-foreground">{patient.email}</div>}
+                          {!patient.phone && !patient.email && <span className="text-muted-foreground">-</span>}
                         </div>
                       </TableCell>
-                      <TableCell>{patient.lastVitals}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm">View</Button>
-                          <Button variant="outline" size="sm">Record Vitals</Button>
+                      <TableCell className="text-right">
+                        <div className="flex gap-2 justify-end">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleRecordVitals(patient)}
+                          >
+                            <Activity className="h-4 w-4 mr-1" />
+                            Record Vitals
+                          </Button>
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => handleSendToDoctor(patient)}
+                          >
+                            <UserPlus className="h-4 w-4 mr-1" />
+                            Send to Doctor
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -135,8 +173,27 @@ export default function PatientsPage() {
               </TableBody>
             </Table>
           </div>
+
+          {filteredPatients.length > 0 && (
+            <div className="mt-4 text-sm text-muted-foreground">
+              Showing {filteredPatients.length} of {patients.length} patients
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* Send to Doctor Modal */}
+      {selectedPatient && (
+        <SendToDoctorModal
+          patient={selectedPatient}
+          isOpen={isSendToDoctorModalOpen}
+          onClose={() => {
+            setIsSendToDoctorModalOpen(false);
+            setSelectedPatient(null);
+          }}
+          onSuccess={handleAppointmentCreated}
+        />
+      )}
     </div>
   );
 }

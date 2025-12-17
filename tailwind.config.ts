@@ -64,15 +64,15 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				medical: {
-					primary: '#9b87f5',
-					secondary: '#7E69AB',
-					tertiary: '#6E59A5',
-					dark: '#1A1F2C',
-					accent: '#8B5CF6',
-					danger: '#ea384c',
-					success: '#10B981',
-					warning: '#F59E0B',
-					info: '#3B82F6',
+					primary: '#6366f1', // Indigo 500
+					secondary: '#818cf8', // Indigo 400
+					tertiary: '#4f46e5', // Indigo 600
+					dark: '#1e1b4b', // Indigo 950
+					accent: '#06b6d4', // Cyan 500
+					danger: '#ef4444', // Red 500
+					success: '#10b981', // Emerald 500
+					warning: '#f59e0b', // Amber 500
+					info: '#3b82f6', // Blue 500
 				}
 			},
 			borderRadius: {

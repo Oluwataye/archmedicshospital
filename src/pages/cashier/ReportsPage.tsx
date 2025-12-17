@@ -21,10 +21,10 @@ const ReportsPage = () => {
     <div className="flex-1 p-6 overflow-auto">
       {/* Breadcrumbs */}
       <div className="text-gray-500 text-sm mb-4">Cashier &gt; Reports</div>
-      
+
       {/* Page Header */}
       <h1 className="text-2xl font-bold text-gray-800 mb-4">Financial Reports</h1>
-      
+
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>Report Parameters</CardTitle>
@@ -33,8 +33,8 @@ const ReportsPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Report Type</label>
-              <select 
-                className="w-full border border-gray-300 rounded-md p-2"
+              <select
+                className="w-full border border-gray-300 rounded-md p-2 bg-white text-black"
                 value={reportType}
                 onChange={(e) => setReportType(e.target.value)}
               >
@@ -46,11 +46,11 @@ const ReportsPage = () => {
                 <option value="payment-methods">Payment Methods</option>
               </select>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
-              <select 
-                className="w-full border border-gray-300 rounded-md p-2"
+              <select
+                className="w-full border border-gray-300 rounded-md p-2 bg-white text-black"
                 value={dateRange}
                 onChange={(e) => setDateRange(e.target.value)}
               >
@@ -62,14 +62,14 @@ const ReportsPage = () => {
                 <option value="custom">Custom Range</option>
               </select>
             </div>
-            
+
             <div className="flex items-end">
               <Button className="bg-blue-500 w-full">Generate Report</Button>
             </div>
           </div>
         </CardContent>
       </Card>
-      
+
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle>Daily Sales Report</CardTitle>
@@ -88,7 +88,7 @@ const ReportsPage = () => {
             </Button>
           </div>
         </CardHeader>
-        
+
         <CardContent>
           <div className="rounded-md border">
             <Table>
@@ -108,7 +108,7 @@ const ReportsPage = () => {
                     <TableCell className="font-medium">{item.id}</TableCell>
                     <TableCell>{item.patient}</TableCell>
                     <TableCell>{item.service}</TableCell>
-                    <TableCell>${item.amount.toFixed(2)}</TableCell>
+                    <TableCell>₦{item.amount.toFixed(2)}</TableCell>
                     <TableCell>{item.paymentType}</TableCell>
                     <TableCell>{item.date}</TableCell>
                   </TableRow>
@@ -116,7 +116,7 @@ const ReportsPage = () => {
               </TableBody>
             </Table>
           </div>
-          
+
           <div className="mt-4 bg-gray-50 p-4 rounded-md border border-gray-200">
             <div className="flex justify-between items-center">
               <div>
@@ -125,7 +125,7 @@ const ReportsPage = () => {
               </div>
               <div className="text-right">
                 <p className="text-sm text-gray-500">Total Sales</p>
-                <p className="text-xl font-bold text-gray-800">$665.50</p>
+                <p className="text-xl font-bold text-gray-800">₦665.50</p>
               </div>
             </div>
           </div>

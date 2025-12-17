@@ -1,306 +1,328 @@
-
-import { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
+import React, { useState, useEffect } from 'react';
+import { Pill, Clock, CheckCircle, AlertTriangle, Search, Scan, Filter } from 'lucide-react';
+import { toast } from 'sonner';
+import { ApiService } from '@/services/apiService';
+import LoadingSpinner from '@/components/common/LoadingSpinner';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, CheckCircle, Clock } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { format, isToday, parseISO } from 'date-fns';
 
-export default function MedicationPage() {
-  const [medications, setMedications] = useState([
-    { 
-      id: 'M-1001', 
-      patientId: 'P-10542',
-      patientName: 'Alice Johnson',
-      room: '204',
-      medication: 'Amoxicillin 500mg',
-      route: 'Oral',
-      schedule: 'Every 8 hours',
-      nextDue: '10:30 AM',
-      status: 'pending',
-    },
-    { 
-      id: 'M-1002', 
-      patientId: 'P-10398',
-      patientName: 'Robert Brown',
-      room: '210',
-      medication: 'Insulin Regular 10 units',
-      route: 'Subcutaneous',
-      schedule: 'Before meals',
-      nextDue: '11:00 AM',
-      status: 'pending',
-    },
-    { 
-      id: 'M-1003', 
-      patientId: 'P-10687',
-      patientName: 'Emily Wilson',
-      room: '108',
-      medication: 'Furosemide 20mg',
-      route: 'Oral',
-      schedule: 'Once daily',
-      nextDue: '09:00 AM',
-      status: 'completed',
-    },
-    { 
-      id: 'M-1004', 
-      patientId: 'P-10754',
-      patientName: 'Michael Davis',
-      room: '307',
-      medication: 'Morphine 2mg',
-      route: 'IV',
-      schedule: 'Every 4 hours PRN',
-      nextDue: '12:30 PM',
-      status: 'pending',
-    },
-    { 
-      id: 'M-1005', 
-      patientId: 'P-10542',
-      patientName: 'Alice Johnson',
-      room: '204',
-      medication: 'Aspirin 81mg',
-      route: 'Oral',
-      schedule: 'Once daily',
-      nextDue: '09:00 AM',
-      status: 'completed',
-    },
-  ]);
+interface Prescription {
+  id: string;
+  patient_id: string;
+  patient_name: string;
+  medication_name: string;
+  dosage: string;
+  frequency: string;
+  start_date: string;
+  end_date: string;
+  status: string;
+  notes: string;
+}
 
-  const [selectedMedication, setSelectedMedication] = useState(null);
-  const [showAdministerForm, setShowAdministerForm] = useState(false);
-  const [adminFormData, setAdminFormData] = useState({
-    actualTime: '',
+interface Administration {
+  id: string;
+  prescription_id: string;
+  administered_at: string;
+  administered_by: string;
+  status: string; // Administered, Missed, Refused
+  notes: string;
+}
+
+export default function NurseMedicationPage() {
+  const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [barcodeInput, setBarcodeInput] = useState('');
+
+  // Administration Modal
+  const [selectedPrescription, setSelectedPrescription] = useState<Prescription | null>(null);
+  const [isAdministerModalOpen, setIsAdministerModalOpen] = useState(false);
+  const [administerForm, setAdministerForm] = useState({
+    status: 'Administered',
     notes: '',
+    pain_score: ''
   });
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setAdminFormData(prev => ({ ...prev, [name]: value }));
+  useEffect(() => {
+    loadPrescriptions();
+  }, []);
+
+  const loadPrescriptions = async () => {
+    try {
+      setLoading(true);
+      const data = await ApiService.getPrescriptions();
+      // Filter for active prescriptions only
+      const active = data.filter((p: any) => p.status === 'active');
+      setPrescriptions(active);
+    } catch (error) {
+      console.error('Error loading prescriptions:', error);
+      toast.error('Failed to load prescriptions');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleAdminister = (med) => {
-    setSelectedMedication(med);
-    setShowAdministerForm(true);
-    // Pre-populate the form with current time
-    const now = new Date();
-    const hours = now.getHours().toString().padStart(2, '0');
-    const minutes = now.getMinutes().toString().padStart(2, '0');
-    setAdminFormData({
-      actualTime: `${hours}:${minutes}`,
+  const handleAdministerClick = (prescription: Prescription) => {
+    setSelectedPrescription(prescription);
+    setAdministerForm({
+      status: 'Administered',
       notes: '',
+      pain_score: ''
     });
+    setIsAdministerModalOpen(true);
   };
 
-  const handleSubmitAdminister = (e) => {
+  const handleAdministerSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Update the medication status
-    setMedications(prevMeds => prevMeds.map(med => 
-      med.id === selectedMedication.id 
-        ? { ...med, status: 'completed' } 
-        : med
-    ));
-    
-    // Reset form
-    setSelectedMedication(null);
-    setShowAdministerForm(false);
-    setAdminFormData({
-      actualTime: '',
-      notes: '',
-    });
-    
-    // Show confirmation (in a real app, this would be a toast notification)
-    alert(`Medication ${selectedMedication.medication} administered to ${selectedMedication.patientName}`);
+    if (!selectedPrescription) return;
+
+    try {
+      // In a real app, we would call an endpoint to record administration
+      // await ApiService.recordAdministration({ ... });
+
+      // For now, we'll just simulate it
+      toast.success(`Medication ${selectedPrescription.medication_name} recorded as ${administerForm.status}`);
+      setIsAdministerModalOpen(false);
+
+      // Ideally we would refresh the list or update local state to show it was given today
+    } catch (error) {
+      console.error('Error recording administration:', error);
+      toast.error('Failed to record administration');
+    }
   };
+
+  const handleBarcodeScan = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Simulate barcode scanning logic
+    // In reality, this would look up the medication by barcode
+    const found = prescriptions.find(p =>
+      p.id === barcodeInput ||
+      (p.medication_name && p.medication_name.toLowerCase().includes(barcodeInput.toLowerCase()))
+    );
+
+    if (found) {
+      handleAdministerClick(found);
+      setBarcodeInput('');
+    } else {
+      toast.error('Medication not found');
+    }
+  };
+
+  const filteredPrescriptions = prescriptions.filter(p =>
+    p.patient_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.medication_name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  if (loading) {
+    return <LoadingSpinner fullScreen />;
+  }
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Medication Administration</h1>
-        <p className="text-gray-500">Track and administer scheduled medications</p>
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Medication Administration</h1>
+          <p className="text-muted-foreground mt-1">Track and administer patient medications (MAR)</p>
+        </div>
+
+        {/* Barcode Scanner Simulation */}
+        <form onSubmit={handleBarcodeScan} className="flex gap-2">
+          <div className="relative">
+            <Scan className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Scan Medication Barcode..."
+              className="pl-9 w-[250px]"
+              value={barcodeInput}
+              onChange={(e) => setBarcodeInput(e.target.value)}
+            />
+          </div>
+          <Button type="submit">Scan</Button>
+        </form>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Due Soon</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-center p-6">
-              <div className="text-center">
-                <div className="rounded-full w-20 h-20 bg-yellow-100 text-yellow-600 flex items-center justify-center mx-auto mb-4">
-                  <Clock className="h-10 w-10" />
-                </div>
-                <p className="text-4xl font-bold">3</p>
-                <p className="text-gray-500">Medications due within 30 minutes</p>
-              </div>
+      {/* Stats Cards */}
+      <div className="grid gap-6 md:grid-cols-3">
+        <Card className="card-accent-blue hover:shadow-lg transition-all hover:scale-105">
+          <CardContent className="p-6 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Due Now</p>
+              <h2 className="text-3xl font-bold text-blue-600">{filteredPrescriptions.length}</h2>
+              <p className="text-xs text-muted-foreground mt-1">Scheduled for this shift</p>
+            </div>
+            <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center">
+              <Clock className="h-6 w-6 text-blue-600" />
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Administered</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-center p-6">
-              <div className="text-center">
-                <div className="rounded-full w-20 h-20 bg-green-100 text-green-600 flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle className="h-10 w-10" />
-                </div>
-                <p className="text-4xl font-bold">
-                  {medications.filter(med => med.status === 'completed').length}
-                </p>
-                <p className="text-gray-500">Medications administered today</p>
-              </div>
+        <Card className="card-accent-green hover:shadow-lg transition-all hover:scale-105">
+          <CardContent className="p-6 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Administered</p>
+              <h2 className="text-3xl font-bold text-green-600">0</h2>
+              <p className="text-xs text-muted-foreground mt-1">Doses given today</p>
+            </div>
+            <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center">
+              <CheckCircle className="h-6 w-6 text-green-600" />
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Issues</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-center p-6">
-              <div className="text-center">
-                <div className="rounded-full w-20 h-20 bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4">
-                  <AlertTriangle className="h-10 w-10" />
-                </div>
-                <p className="text-4xl font-bold">0</p>
-                <p className="text-gray-500">Missed or delayed medications</p>
-              </div>
+        <Card className="card-accent-red hover:shadow-lg transition-all hover:scale-105">
+          <CardContent className="p-6 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Missed/Late</p>
+              <h2 className="text-3xl font-bold text-red-600">0</h2>
+              <p className="text-xs text-muted-foreground mt-1">Requires attention</p>
+            </div>
+            <div className="h-12 w-12 bg-red-100 rounded-full flex items-center justify-center">
+              <AlertTriangle className="h-6 w-6 text-red-600" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {showAdministerForm ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Administer Medication</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmitAdminister} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-md">
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Patient</p>
-                  <p className="text-base">{selectedMedication.patientName}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Room</p>
-                  <p className="text-base">{selectedMedication.room}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Medication</p>
-                  <p className="text-base">{selectedMedication.medication}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Route</p>
-                  <p className="text-base">{selectedMedication.route}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Scheduled Time</p>
-                  <p className="text-base">{selectedMedication.nextDue}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Schedule</p>
-                  <p className="text-base">{selectedMedication.schedule}</p>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Actual Administration Time</label>
-                <input
-                  type="time"
-                  name="actualTime"
-                  value={adminFormData.actualTime}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded-md"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea
-                  name="notes"
-                  value={adminFormData.notes}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded-md h-24"
-                  placeholder="Document any relevant observations or patient reactions"
-                ></textarea>
-              </div>
-
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" type="button" onClick={() => {
-                  setSelectedMedication(null);
-                  setShowAdministerForm(false);
-                }}>
-                  Cancel
-                </Button>
-                <Button type="submit">
-                  Confirm Administration
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>Medication Schedule</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Patient</TableHead>
-                    <TableHead>Room</TableHead>
-                    <TableHead>Medication</TableHead>
-                    <TableHead>Route</TableHead>
-                    <TableHead>Schedule</TableHead>
-                    <TableHead>Next Due</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Action</TableHead>
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <CardTitle>Active Prescriptions</CardTitle>
+            <div className="relative w-[300px]">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Search patient or medication..."
+                className="pl-9"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Patient</TableHead>
+                <TableHead>Medication</TableHead>
+                <TableHead>Dosage</TableHead>
+                <TableHead>Frequency</TableHead>
+                <TableHead>Next Due</TableHead>
+                <TableHead>Action</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredPrescriptions.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
+                    No active prescriptions found.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredPrescriptions.map((prescription) => (
+                  <TableRow key={prescription.id}>
+                    <TableCell className="font-medium">
+                      {prescription.patient_name}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Pill className="h-4 w-4 text-blue-500" />
+                        {prescription.medication_name}
+                      </div>
+                    </TableCell>
+                    <TableCell>{prescription.dosage}</TableCell>
+                    <TableCell>{prescription.frequency}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+                        Due Now
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Button size="sm" onClick={() => handleAdministerClick(prescription)}>
+                        Administer
+                      </Button>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {medications.map((med) => (
-                    <TableRow key={med.id}>
-                      <TableCell>{med.patientName}</TableCell>
-                      <TableCell>{med.room}</TableCell>
-                      <TableCell>{med.medication}</TableCell>
-                      <TableCell>{med.route}</TableCell>
-                      <TableCell>{med.schedule}</TableCell>
-                      <TableCell>{med.nextDue}</TableCell>
-                      <TableCell>
-                        <div className={`px-2 py-1 rounded-full text-xs inline-block font-medium
-                          ${med.status === 'completed' ? 'bg-green-100 text-green-600' : 
-                            med.status === 'pending' ? 'bg-yellow-100 text-yellow-600' :
-                            'bg-red-100 text-red-600'}`}>
-                          {med.status === 'completed' ? 'Administered' : 
-                            med.status === 'pending' ? 'Pending' : 'Missed'}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {med.status === 'pending' && (
-                          <Button size="sm" onClick={() => handleAdminister(med)}>
-                            Administer
-                          </Button>
-                        )}
-                        {med.status === 'completed' && (
-                          <Button size="sm" variant="outline">
-                            View Details
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      {/* Administer Modal */}
+      <Dialog open={isAdministerModalOpen} onOpenChange={setIsAdministerModalOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Administer Medication</DialogTitle>
+            <DialogDescription>
+              Record administration details for this medication.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleAdministerSubmit} className="space-y-4">
+            <div className="p-4 bg-muted rounded-lg space-y-2">
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Patient:</span>
+                <span className="font-medium">{selectedPrescription?.patient_name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Medication:</span>
+                <span className="font-medium">{selectedPrescription?.medication_name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Dosage:</span>
+                <span className="font-medium">{selectedPrescription?.dosage}</span>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
+
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Select
+                value={administerForm.status}
+                onValueChange={(value) => setAdministerForm(prev => ({ ...prev, status: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Administered">Administered</SelectItem>
+                  <SelectItem value="Missed">Missed</SelectItem>
+                  <SelectItem value="Refused">Refused by Patient</SelectItem>
+                  <SelectItem value="Held">Held (Clinical Reason)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea
+                id="notes"
+                value={administerForm.notes}
+                onChange={(e) => setAdministerForm(prev => ({ ...prev, notes: e.target.value }))}
+                placeholder="Any observations, reactions, or reasons..."
+                rows={3}
+              />
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsAdministerModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit">
+                Confirm
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

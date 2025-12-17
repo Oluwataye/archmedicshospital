@@ -1,18 +1,21 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useHospitalSettings } from '@/contexts/HospitalSettingsContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Loader2, Lock, Mail, ShieldCheck, User } from 'lucide-react';
+import { Loader2, Lock, Mail, ShieldCheck, User, Eye, EyeOff } from 'lucide-react';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
+  const { settings } = useHospitalSettings();
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -37,9 +40,9 @@ const LoginPage = () => {
     }, 1000);
   };
 
-  const fillDemoCredentials = (roleEmail: string) => {
+  const fillDemoCredentials = (roleEmail: string, rolePassword?: string) => {
     setEmail(roleEmail);
-    setPassword('password'); // Assuming a default password for demo
+    setPassword(rolePassword || 'password');
     toast.info(`Demo credentials filled for ${roleEmail.split('@')[0]}`);
   };
 
@@ -53,7 +56,7 @@ const LoginPage = () => {
             <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
               <ShieldCheck className="h-8 w-8 text-primary-foreground" />
             </div>
-            <span className="text-3xl font-bold tracking-tight">Archmedics HMS</span>
+            <span className="text-3xl font-bold tracking-tight">{settings?.hospital_name || 'Hospital HMS'}</span>
           </div>
           <p className="text-lg text-muted-foreground leading-relaxed">
             A comprehensive Hospital Management System designed for modern healthcare facilities.
@@ -90,7 +93,7 @@ const LoginPage = () => {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="name@archmedics.com"
+                    placeholder={`name@${settings?.email?.split('@')[1] || 'hospital.com'}`}
                     className="pl-9"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -109,13 +112,25 @@ const LoginPage = () => {
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="password"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
-                    className="pl-9"
+                    className="pl-9 pr-10"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
                 </div>
               </div>
               <Button
@@ -135,33 +150,39 @@ const LoginPage = () => {
               </Button>
             </form>
 
-            <div className="mt-6">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
+            {/* Demo Accounts - Only show in development */}
+            {import.meta.env.DEV && (
+              <div className="mt-6">
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">
+                      Demo Accounts (Development Only)
+                    </span>
+                  </div>
                 </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">
-                    Demo Accounts
-                  </span>
-                </div>
-              </div>
 
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                <Button variant="outline" size="sm" onClick={() => fillDemoCredentials('admin@archmedics.com')}>
-                  Admin
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => fillDemoCredentials('doctor@archmedics.com')}>
-                  Doctor
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => fillDemoCredentials('nurse@archmedics.com')}>
-                  Nurse
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => fillDemoCredentials('ehr@archmedics.com')}>
-                  EHR
-                </Button>
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <Button variant="outline" size="sm" onClick={() => fillDemoCredentials('admin@archmedics.com', 'admin123')}>
+                    Admin
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => fillDemoCredentials('dr.smith@archmedics.com', 'doctor123')}>
+                    Doctor
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => fillDemoCredentials('nurse@archmedics.com', 'nurse123')}>
+                    Nurse
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => fillDemoCredentials('ehr@archmedics.com', 'ehr123')}>
+                    EHR
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => fillDemoCredentials('labtech@archmedics.com', 'lab123')}>
+                    Lab Tech
+                  </Button>
+                </div>
               </div>
-            </div>
+            )}
           </CardContent>
           <CardFooter className="flex justify-center border-t p-4 bg-slate-50 dark:bg-slate-900/50 rounded-b-xl">
             <p className="text-xs text-muted-foreground text-center">

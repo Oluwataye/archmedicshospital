@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth, UserRole } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
@@ -22,7 +22,10 @@ import {
     UserPlus,
     BarChart3,
     Database,
-    Building2
+    Building2,
+    ChevronDown,
+    RotateCcw,
+    Bed
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -45,21 +48,132 @@ const navItems: NavItem[] = [
         title: 'Dashboard',
         href: '/',
         icon: LayoutDashboard,
-        roles: ['admin', 'doctor', 'nurse', 'pharmacist', 'labtech', 'cashier', 'ehr'],
+        roles: ['admin', 'ehr'],
     },
-    // Admin Routes
+    // Doctor Portal Items - Moved to top for priority
+    {
+        title: 'Doctor Dashboard',
+        href: '/doctor',
+        icon: LayoutDashboard,
+        roles: ['doctor', 'admin'],
+    },
+    {
+        title: 'Nurse Dashboard',
+        href: '/nurse',
+        icon: LayoutDashboard,
+        roles: ['nurse'],
+    },
+    {
+        title: 'Render Services',
+        href: '/ehr/render-services',
+        icon: Stethoscope,
+        roles: ['ehr', 'nurse'],
+    },
+    {
+        title: 'My Patients',
+        href: '/nurse/patients',
+        icon: Users,
+        roles: ['nurse'],
+    },
+    {
+        title: 'Appointments',
+        href: '/ehr/appointments',
+        icon: Calendar,
+        roles: ['nurse'],
+    },
+    {
+        title: 'My Patients',
+        href: '/doctor/patients',
+        icon: Users,
+        roles: ['doctor', 'admin'],
+    },
+
+    {
+        title: 'Appointments',
+        href: '/doctor/appointments',
+        icon: Calendar,
+        roles: ['doctor', 'admin'],
+    },
+
+    {
+        title: 'Cashier Portal',
+        href: '/admin/cashier',
+        icon: CreditCard,
+        roles: ['admin'],
+    },
+    {
+        title: 'Refunds',
+        href: '/admin/refunds',
+        icon: RotateCcw,
+        roles: ['admin'],
+    },
+
+
+    // Admin Core
     {
         title: 'HMO Management',
         href: '/admin/hmo',
         icon: Building2,
         roles: ['admin'],
+        children: [
+            {
+                title: 'Providers',
+                href: '/admin/hmo',
+                icon: Building2,
+            },
+            {
+                title: 'Claims',
+                href: '/cashier/claims',
+                icon: FileText,
+            },
+            {
+                title: 'Pre-Auth',
+                href: '/cashier/preauth',
+                icon: Shield,
+            },
+            {
+                title: 'Auth Verification',
+                href: '/ehr/authorization-verification',
+                icon: Shield,
+            },
+        ]
     },
-    // EHR Routes
+    {
+        title: 'Staff Management',
+        href: '/staff',
+        icon: Users,
+        roles: ['admin'],
+        children: [
+            {
+                title: 'All Staff',
+                href: '/staff',
+                icon: Users,
+            },
+            {
+                title: 'Schedule',
+                href: '/staff/schedule',
+                icon: Calendar,
+            },
+            {
+                title: 'Roles & Permissions',
+                href: '/staff/roles',
+                icon: Shield,
+            },
+        ]
+    },
+    {
+        title: 'Services Management',
+        href: '/admin/services',
+        icon: Stethoscope,
+        roles: ['admin'],
+    },
+    // EHR Core
+    // EHR Core
     {
         title: 'Patient Records',
         href: '/ehr/patient-records',
         icon: FileText,
-        roles: ['ehr', 'doctor', 'nurse'],
+        roles: ['ehr', 'admin', 'doctor'],
     },
     {
         title: 'Patient Management',
@@ -71,49 +185,178 @@ const navItems: NavItem[] = [
         title: 'Appointments',
         href: '/ehr/appointments',
         icon: Calendar,
-        roles: ['ehr', 'doctor', 'nurse'],
-    },
-    {
-        title: 'Clinical Notes',
-        href: '/ehr/progress-notes',
-        icon: ClipboardList,
-        roles: ['ehr', 'doctor', 'nurse'],
-        children: [
-            {
-                title: 'Progress Notes',
-                href: '/ehr/progress-notes',
-                icon: FileText,
-            },
-            {
-                title: 'SOAP Notes',
-                href: '/ehr/soap-notes',
-                icon: FileText,
-            },
-            {
-                title: 'Discharge Notes',
-                href: '/ehr/discharge-notes',
-                icon: FileText,
-            },
-        ]
-    },
-    {
-        title: 'Lab Results',
-        href: '/ehr/lab-results',
-        icon: TestTube,
-        roles: ['ehr', 'doctor', 'labtech'],
+        roles: ['ehr', 'admin'],
     },
     {
         title: 'Imaging',
         href: '/ehr/imaging',
         icon: Activity,
-        roles: ['ehr', 'doctor'],
+        roles: ['ehr', 'doctor', 'admin', 'nurse'],
+    },
+    {
+        title: 'Ward Occupancy',
+        href: '/admin/reports/ward-occupancy',
+        icon: Bed,
+        roles: ['admin', 'nurse'],
+    },
+    {
+        title: 'Medication Compliance',
+        href: '/admin/reports/medication-compliance',
+        icon: Pill,
+        roles: ['admin', 'nurse'],
+    },
+
+
+
+
+    {
+        title: 'Vitals',
+        href: '/nurse/vitals',
+        icon: Activity,
+        roles: ['nurse'],
     },
     {
         title: 'Medications',
-        href: '/ehr/medications',
+        href: '/nurse/medications',
         icon: Pill,
-        roles: ['ehr', 'doctor', 'pharmacist', 'nurse'],
+        roles: ['nurse'],
     },
+    {
+        title: 'Ward Management',
+        href: '/nurse/wards',
+        icon: Building2,
+        roles: ['nurse', 'admin'],
+    },
+    {
+        title: 'Progress Notes',
+        href: '/ehr/progress-notes',
+        icon: ClipboardList,
+        roles: ['nurse'],
+    },
+    {
+        title: 'SOAP Notes',
+        href: '/ehr/soap-notes',
+        icon: Stethoscope,
+        roles: ['nurse'],
+    },
+    {
+        title: 'Pharmacy',
+        href: '/pharmacy',
+        icon: Pill,
+        roles: ['pharmacist', 'admin'],
+        children: [
+            {
+                title: 'Dashboard',
+                href: '/pharmacy',
+                icon: LayoutDashboard,
+            },
+            {
+                title: 'Dispensary',
+                href: '/pharmacy/dispensary',
+                icon: Pill,
+            },
+            {
+                title: 'Inventory',
+                href: '/pharmacy/inventory',
+                icon: Database,
+            },
+            {
+                title: 'Prescriptions',
+                href: '/pharmacy/prescriptions',
+                icon: FileText,
+            },
+        ]
+    },
+    {
+        title: 'Laboratory',
+        href: '/lab',
+        icon: TestTube,
+        roles: ['labtech', 'admin'],
+        children: [
+            {
+                title: 'Dashboard',
+                href: '/lab',
+                icon: LayoutDashboard,
+            },
+            {
+                title: 'Worklist',
+                href: '/lab/worklist',
+                icon: ClipboardList,
+            },
+            {
+                title: 'Results',
+                href: '/ehr/lab-results',
+                icon: TestTube,
+            },
+            {
+                title: 'Inventory',
+                href: '/lab/inventory',
+                icon: Database,
+            },
+            {
+                title: 'Equipment',
+                href: '/lab/equipment',
+                icon: Settings,
+            },
+        ]
+    },
+
+    // Finance
+
+    {
+        title: 'Cashier & Billing',
+        href: '/cashier',
+        icon: CreditCard,
+        roles: ['admin'],
+        children: [
+            {
+                title: 'Dashboard',
+                href: '/cashier',
+                icon: LayoutDashboard,
+            },
+            {
+                title: 'Billing',
+                href: '/cashier/billing',
+                icon: CreditCard,
+            },
+            {
+                title: 'Claims',
+                href: '/cashier/claims',
+                icon: FileText,
+            },
+            {
+                title: 'Pre-Auth',
+                href: '/cashier/preauth',
+                icon: Shield,
+            },
+        ]
+    },
+    // Flattened Cashier Items
+    {
+        title: 'Cashier Dashboard',
+        href: '/cashier',
+        icon: LayoutDashboard,
+        roles: ['cashier'],
+    },
+    {
+        title: 'Billing',
+        href: '/cashier/billing',
+        icon: CreditCard,
+        roles: ['cashier'],
+    },
+    {
+        title: 'Claims',
+        href: '/cashier/claims',
+        icon: FileText,
+        roles: ['cashier'],
+    },
+    {
+        title: 'Pre-Auth',
+        href: '/cashier/preauth',
+        icon: Shield,
+        roles: ['cashier'],
+    },
+    // Analytics & System
     {
         title: 'Analytics',
         href: '/ehr/analytics',
@@ -137,18 +380,11 @@ const navItems: NavItem[] = [
             },
         ]
     },
-    // Cashier Routes
     {
-        title: 'Claims',
-        href: '/cashier/claims',
-        icon: FileText,
-        roles: ['cashier', 'admin'],
-    },
-    {
-        title: 'Pre-Authorization',
-        href: '/cashier/preauth',
-        icon: Shield,
-        roles: ['cashier', 'admin'],
+        title: 'System Settings',
+        href: '/admin/settings',
+        icon: Settings,
+        roles: ['admin'],
     },
 ];
 
@@ -156,6 +392,7 @@ const Sidebar = ({ className }: SidebarProps) => {
     const { user } = useAuth();
     const location = useLocation();
     const [collapsed, setCollapsed] = useState(false);
+    const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
     if (!user) return null;
 
@@ -163,6 +400,30 @@ const Sidebar = ({ className }: SidebarProps) => {
         if (!item.roles) return true;
         return item.roles.includes(user.role);
     });
+
+    const toggleExpanded = (title: string) => {
+        setExpandedItems(prev =>
+            prev.includes(title)
+                ? prev.filter(t => t !== title)
+                : [...prev, title]
+        );
+    };
+
+    const isActiveParent = (item: NavItem) => {
+        if (location.pathname === item.href) return true;
+        if (item.children) {
+            return item.children.some(child => location.pathname === child.href);
+        }
+        return false;
+    };
+
+    // Auto-expand parents when on a child route
+    React.useEffect(() => {
+        const activeParent = filteredNavItems.find(item => item.children?.some(child => child.href === location.pathname));
+        if (activeParent && !expandedItems.includes(activeParent.title)) {
+            setExpandedItems(prev => [...prev, activeParent.title]);
+        }
+    }, [location.pathname]);
 
     const SidebarContent = () => (
         <div className="flex flex-col h-full bg-card border-r">
@@ -184,43 +445,74 @@ const Sidebar = ({ className }: SidebarProps) => {
 
             <ScrollArea className="flex-1 py-4">
                 <nav className="grid gap-1 px-2">
-                    {filteredNavItems.map((item, index) => (
-                        <div key={index}>
-                            <NavLink
-                                to={item.href}
-                                className={({ isActive }) =>
-                                    cn(
-                                        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all hover:text-primary",
-                                        isActive ? "bg-muted text-primary" : "text-muted-foreground",
-                                        collapsed && "justify-center px-2"
-                                    )
-                                }
-                                title={collapsed ? item.title : undefined}
-                            >
-                                <item.icon className="h-4 w-4" />
-                                {!collapsed && <span>{item.title}</span>}
-                            </NavLink>
+                    {filteredNavItems.map((item, index) => {
+                        const isExpanded = expandedItems.includes(item.title);
+                        const hasChildren = item.children && item.children.length > 0;
+                        const isActive = isActiveParent(item);
 
-                            {!collapsed && item.children && (
-                                <div className="ml-6 mt-1 grid gap-1 border-l pl-2">
-                                    {item.children.map((child, childIndex) => (
-                                        <NavLink
-                                            key={childIndex}
-                                            to={child.href}
-                                            className={({ isActive }) =>
-                                                cn(
-                                                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all hover:text-primary",
-                                                    isActive ? "bg-muted text-primary" : "text-muted-foreground"
-                                                )
-                                            }
+                        return (
+                            <div key={index}>
+                                {hasChildren && !collapsed ? (
+                                    <>
+                                        <button
+                                            onClick={() => toggleExpanded(item.title)}
+                                            className={cn(
+                                                "w-full flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all hover:bg-accent hover:text-accent-foreground",
+                                                isActive ? "bg-muted text-primary" : "text-muted-foreground"
+                                            )}
                                         >
-                                            <span>{child.title}</span>
-                                        </NavLink>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    ))}
+                                            <div className="flex items-center gap-3">
+                                                <item.icon className="h-4 w-4" />
+                                                <span>{item.title}</span>
+                                            </div>
+                                            {isExpanded ? (
+                                                <ChevronDown className="h-4 w-4" />
+                                            ) : (
+                                                <ChevronRight className="h-4 w-4" />
+                                            )}
+                                        </button>
+
+                                        {isExpanded && (
+                                            <div className="ml-4 mt-1 grid gap-1 border-l pl-2 animate-in slide-in-from-top-2 duration-200">
+                                                {item.children!
+                                                    .filter(child => !child.roles || child.roles.includes(user.role))
+                                                    .map((child, childIndex) => (
+                                                        <NavLink
+                                                            key={childIndex}
+                                                            to={child.href}
+                                                            className={({ isActive }) =>
+                                                                cn(
+                                                                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all hover:text-primary",
+                                                                    isActive ? "bg-secondary text-primary font-semibold" : "text-muted-foreground hover:bg-secondary/50"
+                                                                )
+                                                            }
+                                                        >
+                                                            <child.icon className="h-3.5 w-3.5" />
+                                                            <span>{child.title}</span>
+                                                        </NavLink>
+                                                    ))}
+                                            </div>
+                                        )}
+                                    </>
+                                ) : (
+                                    <NavLink
+                                        to={item.href}
+                                        className={({ isActive }) =>
+                                            cn(
+                                                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all hover:text-primary",
+                                                isActive ? "bg-muted text-primary" : "text-muted-foreground",
+                                                collapsed && "justify-center px-2"
+                                            )
+                                        }
+                                        title={collapsed ? item.title : undefined}
+                                    >
+                                        <item.icon className="h-4 w-4" />
+                                        {!collapsed && <span>{item.title}</span>}
+                                    </NavLink>
+                                )}
+                            </div>
+                        );
+                    })}
                 </nav>
             </ScrollArea>
 

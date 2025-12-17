@@ -1,5 +1,10 @@
 import type { Knex } from 'knex';
 import dotenv from 'dotenv';
+import path from 'path';
+
+// Remove ESM specific code since we are targeting CommonJS
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = path.dirname(__filename);
 
 dotenv.config();
 
@@ -7,16 +12,16 @@ const config: { [key: string]: Knex.Config } = {
   development: {
     client: 'better-sqlite3',
     connection: {
-      filename: './data/archmedics_hms.db',
+      filename: path.join(__dirname, '../../data/archmedics_hms.db'),
     },
     useNullAsDefault: true,
     migrations: {
       tableName: 'knex_migrations',
-      directory: './migrations',
+      directory: path.join(__dirname, '../server/db/migrations'),
       extension: 'ts',
     },
     seeds: {
-      directory: './seeds',
+      directory: path.join(__dirname, '../../seeds'),
       extension: 'ts',
     },
   },

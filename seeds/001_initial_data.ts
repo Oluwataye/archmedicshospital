@@ -1,8 +1,14 @@
-import { Knex } from "knex";
+import type { Knex } from "knex";
 import bcrypt from 'bcryptjs';
 
 export async function seed(knex: Knex): Promise<void> {
     // Clear existing data
+    // Clear existing data (Order matters for foreign keys)
+    await knex('invoice_items').del();
+    await knex('invoices').del();
+    await knex('lab_maintenance_logs').del();
+    await knex('lab_quality_control').del();
+    await knex('lab_equipment').del();
     await knex('audit_logs').del();
     await knex('prescriptions').del();
     await knex('lab_results').del();
@@ -61,7 +67,7 @@ export async function seed(knex: Knex): Promise<void> {
         },
         {
             username: 'nurse.williams',
-            email: 'nurse.williams@archmedics.com',
+            email: 'nurse@archmedics.com',
             password_hash: nursePassword,
             first_name: 'Emily',
             last_name: 'Williams',
@@ -143,9 +149,9 @@ export async function seed(knex: Knex): Promise<void> {
                 groupNumber: 'GRP001',
                 subscriberId: 'SUB001'
             }),
-            medical_history: ['Hypertension', 'Type 2 Diabetes'],
-            allergies: ['Penicillin', 'Shellfish'],
-            current_medications: ['Metformin 500mg', 'Lisinopril 10mg'],
+            medical_history: JSON.stringify(['Hypertension', 'Type 2 Diabetes']),
+            allergies: JSON.stringify(['Penicillin', 'Shellfish']),
+            current_medications: JSON.stringify(['Metformin 500mg', 'Lisinopril 10mg']),
             assigned_doctor: drSmith?.id,
             status: 'active',
         },
@@ -173,9 +179,9 @@ export async function seed(knex: Knex): Promise<void> {
                 groupNumber: 'GRP002',
                 subscriberId: 'SUB002'
             }),
-            medical_history: ['Asthma'],
-            allergies: ['Latex'],
-            current_medications: ['Albuterol inhaler'],
+            medical_history: JSON.stringify(['Asthma']),
+            allergies: JSON.stringify(['Latex']),
+            current_medications: JSON.stringify(['Albuterol inhaler']),
             assigned_doctor: drJohnson?.id,
             status: 'active',
         },
@@ -203,9 +209,9 @@ export async function seed(knex: Knex): Promise<void> {
                 groupNumber: 'GRP003',
                 subscriberId: 'SUB003'
             }),
-            medical_history: ['High Cholesterol', 'Anxiety'],
-            allergies: ['Sulfa drugs'],
-            current_medications: ['Atorvastatin 20mg', 'Sertraline 50mg'],
+            medical_history: JSON.stringify(['High Cholesterol', 'Anxiety']),
+            allergies: JSON.stringify(['Sulfa drugs']),
+            current_medications: JSON.stringify(['Atorvastatin 20mg', 'Sertraline 50mg']),
             assigned_doctor: drSmith?.id,
             status: 'active',
         },

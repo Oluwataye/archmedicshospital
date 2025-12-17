@@ -1,8 +1,10 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import DashboardStats from '@/components/dashboard/DashboardStats';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import {
   Calendar,
   Clock,
@@ -21,6 +23,7 @@ import {
 
 const DashboardPage = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const role = user?.role || 'admin';
   const currentDate = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -127,64 +130,176 @@ const DashboardPage = () => {
             <div className="grid grid-cols-2 gap-4">
               {role === 'doctor' && (
                 <>
-                  <QuickActionButton icon={Stethoscope} label="New Consultation" />
-                  <QuickActionButton icon={Pill} label="Write Prescription" />
-                  <QuickActionButton icon={TestTube} label="Request Lab Test" />
-                  <QuickActionButton icon={FileText} label="Patient History" />
+                  <QuickActionButton
+                    icon={Stethoscope}
+                    label="New Consultation"
+                    onClick={() => navigate('/doctor/patients')}
+                  />
+                  <QuickActionButton
+                    icon={Pill}
+                    label="Write Prescription"
+                    onClick={() => navigate('/doctor/prescriptions')}
+                  />
+                  <QuickActionButton
+                    icon={TestTube}
+                    label="Request Lab Test"
+                    onClick={() => navigate('/doctor/lab-orders')}
+                  />
+                  <QuickActionButton
+                    icon={FileText}
+                    label="Patient History"
+                    onClick={() => navigate('/doctor/medical-records')}
+                  />
                 </>
               )}
 
               {role === 'nurse' && (
                 <>
-                  <QuickActionButton icon={Activity} label="Record Vitals" />
-                  <QuickActionButton icon={Pill} label="Administer Meds" />
-                  <QuickActionButton icon={UserPlus} label="Admit Patient" />
-                  <QuickActionButton icon={FileText} label="Update Status" />
+                  <QuickActionButton
+                    icon={Activity}
+                    label="Record Vitals"
+                    onClick={() => navigate('/nurse/vitals')}
+                  />
+                  <QuickActionButton
+                    icon={Pill}
+                    label="Administer Meds"
+                    onClick={() => navigate('/nurse/medications')}
+                  />
+                  <QuickActionButton
+                    icon={UserPlus}
+                    label="Admit Patient"
+                    onClick={() => navigate('/nurse/wards')}
+                  />
+                  <QuickActionButton
+                    icon={FileText}
+                    label="Update Status"
+                    onClick={() => navigate('/nurse/patients')}
+                  />
                 </>
               )}
 
               {role === 'pharmacist' && (
                 <>
-                  <QuickActionButton icon={Pill} label="Fill Prescription" />
-                  <QuickActionButton icon={Search} label="Check Inventory" />
-                  <QuickActionButton icon={CreditCard} label="Record Sale" />
-                  <QuickActionButton icon={FileText} label="Order Supplies" />
+                  <QuickActionButton
+                    icon={Pill}
+                    label="Fill Prescription"
+                    onClick={() => navigate('/pharmacist/prescriptions')}
+                  />
+                  <QuickActionButton
+                    icon={Search}
+                    label="Check Inventory"
+                    onClick={() => navigate('/pharmacist/inventory')}
+                  />
+                  <QuickActionButton
+                    icon={CreditCard}
+                    label="Record Sale"
+                    onClick={() => navigate('/pharmacist/sales')}
+                  />
+                  <QuickActionButton
+                    icon={FileText}
+                    label="Order Supplies"
+                    onClick={() => navigate('/pharmacist/inventory')}
+                  />
                 </>
               )}
 
               {role === 'labtech' && (
                 <>
-                  <QuickActionButton icon={TestTube} label="Process Sample" />
-                  <QuickActionButton icon={FileText} label="Record Result" />
-                  <QuickActionButton icon={Search} label="View Queue" />
-                  <QuickActionButton icon={FileBarChart} label="Inventory" />
+                  <QuickActionButton
+                    icon={TestTube}
+                    label="Process Sample"
+                    onClick={() => navigate('/lab/requests')}
+                  />
+                  <QuickActionButton
+                    icon={FileText}
+                    label="Record Result"
+                    onClick={() => navigate('/lab/results')}
+                  />
+                  <QuickActionButton
+                    icon={Search}
+                    label="View Queue"
+                    onClick={() => navigate('/lab/requests')}
+                  />
+                  <QuickActionButton
+                    icon={FileBarChart}
+                    label="Inventory"
+                    onClick={() => navigate('/lab/inventory')}
+                  />
                 </>
               )}
 
               {role === 'cashier' && (
                 <>
-                  <QuickActionButton icon={CreditCard} label="New Transaction" />
-                  <QuickActionButton icon={FileText} label="Print Receipt" />
-                  <QuickActionButton icon={FileBarChart} label="Daily Report" />
-                  <QuickActionButton icon={Settings} label="Close Register" />
+                  <QuickActionButton
+                    icon={CreditCard}
+                    label="New Transaction"
+                    onClick={() => navigate('/billing/new')}
+                  />
+                  <QuickActionButton
+                    icon={FileText}
+                    label="Print Receipt"
+                    onClick={() => navigate('/billing/history')}
+                  />
+                  <QuickActionButton
+                    icon={FileBarChart}
+                    label="Daily Report"
+                    onClick={() => navigate('/billing/reports')}
+                  />
+                  <QuickActionButton
+                    icon={Settings}
+                    label="Close Register"
+                    onClick={() => navigate('/billing/settings')}
+                  />
                 </>
               )}
 
               {role === 'ehr' && (
                 <>
-                  <QuickActionButton icon={Search} label="Search Records" />
-                  <QuickActionButton icon={UserPlus} label="New Patient" />
-                  <QuickActionButton icon={FileText} label="Update Record" />
-                  <QuickActionButton icon={FileBarChart} label="Generate Report" />
+                  <QuickActionButton
+                    icon={Search}
+                    label="Search Records"
+                    onClick={() => navigate('/ehr/patient-management')}
+                  />
+                  <QuickActionButton
+                    icon={UserPlus}
+                    label="New Patient"
+                    onClick={() => navigate('/ehr/patient-management')} // Registration is typically a modal here
+                  />
+                  <QuickActionButton
+                    icon={FileText}
+                    label="Patient Records"
+                    onClick={() => navigate('/ehr/patient-records')}
+                  />
+                  <QuickActionButton
+                    icon={FileBarChart}
+                    label="Statistics"
+                    onClick={() => navigate('/ehr/analytics/statistics')}
+                  />
                 </>
               )}
 
               {role === 'admin' && (
                 <>
-                  <QuickActionButton icon={UserPlus} label="User Management" />
-                  <QuickActionButton icon={FileBarChart} label="Reports" />
-                  <QuickActionButton icon={Settings} label="Settings" />
-                  <QuickActionButton icon={Activity} label="View Logs" />
+                  <QuickActionButton
+                    icon={UserPlus}
+                    label="User Management"
+                    onClick={() => navigate('/admin/users')}
+                  />
+                  <QuickActionButton
+                    icon={FileBarChart}
+                    label="Reports"
+                    onClick={() => navigate('/admin/reports')}
+                  />
+                  <QuickActionButton
+                    icon={Settings}
+                    label="Settings"
+                    onClick={() => navigate('/admin/settings')}
+                  />
+                  <QuickActionButton
+                    icon={Activity}
+                    label="View Logs"
+                    onClick={() => navigate('/admin/logs')}
+                  />
                 </>
               )}
             </div>

@@ -1,302 +1,113 @@
-# 🏥 ARCHMEDICS Hospital Management System
+# 🏥 ARCHMEDICS Hospital System (The Handbook)
 
-A comprehensive, modern Hospital Management System built with React, TypeScript, and Node.js. Manage patients, HMO providers, claims, pre-authorizations, and more!
+**Hi there, Future Tech Genius! 👋**
 
----
+Welcome to the **Archmedics Hospital Management System**. This is a super cool program that helps hospitals run smoothly. Imagine a big digital brain that remembers every patient, every medicine, and every doctor's appointment. That's what this is!
 
-## 📋 Table of Contents
-
-- [Features](#-features)
-- [Prerequisites](#-prerequisites)
-- [Local Installation](#-local-installation-windows)
-- [Database Setup](#-database-setup)
-- [Running the Application](#-running-the-application)
-- [Deployment Guide](#-deployment-guide)
-- [Default Login Credentials](#-default-login-credentials)
-- [Troubleshooting](#-troubleshooting)
-- [Tech Stack](#-tech-stack)
+Think of this project like a giant Lego set. You have different pieces (features) that fit together to build a complete hospital.
 
 ---
 
-## ✨ Features
+## 🧐 What Can This Do?
 
-- 👥 **Multi-Role Access**: Admin, Doctor, Nurse, Cashier, Pharmacist, Lab Tech, EHR
-- 🏥 **Patient Management**: Complete patient records and medical history
-- 💊 **HMO Integration**: Provider management, claims, pre-authorizations
-- 💰 **Billing & Payments**: Cashier dashboard with multiple payment methods
-- 📊 **Reports & Analytics**: Comprehensive reporting system
-- 🔐 **Secure Authentication**: JWT-based authentication
-- 📱 **Responsive Design**: Works on desktop, tablet, and mobile
+*   **Doctors** can see their patients. 👨‍⚕️
+*   **Nurses** can give medicine (digitally!). 👩‍⚕️
+*   **Cashiers** can take payments. 💰
+*   **Admins** (that's you!) can see everything happening. 👑
 
 ---
 
-## 📦 Prerequisites
+## 🛠️ What You Need (The Toolbelt)
 
-Before you start, make sure you have these installed/created:
+Before we start building, you need 3 special tools on your computer. Ask an adult if you need help installing them!
 
-### Required Software & Accounts
-
-1. **Node.js** (version 18 or higher)
-   - Download from: https://nodejs.org/
-   - Choose the "LTS" (Long Term Support) version.
-   - To check if installed: Open Command Prompt and type `node --version`
-
-2. **Git** (for cloning the project)
-   - Download from: https://git-scm.com/
-   - To check if installed: Type `git --version` in Command Prompt
-
-3. **VS Code** (Text Editor)
-   - Download from: https://code.visualstudio.com/
-
-4. **GitHub Account** (Required for deployment)
-   - Sign up at: https://github.com/
+1.  **Node.js** (The Engine): This runs the code.
+    *   Download the "LTS" version from [nodejs.org](https://nodejs.org/).
+2.  **Git** (The Time Machine): This saves your work so you never lose it.
+    *   Download from [git-scm.com](https://git-scm.com/).
+3.  **VS Code** (The Notebook): This is where we write the code.
+    *   Download from [code.visualstudio.com](https://code.visualstudio.com/).
 
 ---
 
-## 💻 Local Installation (Windows)
+## 🚀 How to Run It (Let's Go!)
 
-Follow these steps carefully. Each command should be run in Command Prompt or PowerShell.
+To turn on the hospital system, we need to open **two** windows. It's like turning on the TV *and* the cable box.
 
-### Step 1: Clone the Project
+### Window 1: The Brain (Backend)
+1.  Open your **Command Prompt** (terminal).
+2.  Go to the project folder.
+    *   *Tip: Type `cd archmedics-hms-offline-main` and hit Enter.*
+3.  Type this magic spell and hit Enter:
+    ```bash
+    npm run start:prod
+    ```
+    *Wait until it says "Server running on port 3001".*
 
-Open Command Prompt and navigate to where you want to save the project:
+### Window 2: The Face (Frontend)
+1.  Open a **NEW** Command Prompt window.
+2.  Go to the project folder again.
+    *   *Tip: Type `cd archmedics-hms-offline-main` and hit Enter.*
+3.  Type this spell:
+    ```bash
+    npm run dev
+    ```
+    *Wait until it says "Ready in..."*
 
+### Open the Hospital
+Click on the link `http://localhost:5173` (or whatever it shows) to open the hospital in your web browser!
+
+---
+
+## ☁️ How to Save to GitHub (The "Cloud")
+
+This is super important! **GitHub** is like a cloud locker where you keep your code safe. If your computer breaks, your code is safe in the locker.
+
+Here is how you put your work in the locker. You do this **every time** you finish a cool new feature.
+
+### Step 1: Pack the Box (Git Add)
+First, we gather all the files we changed.
+Type this in your terminal:
 ```bash
-# Navigate to your Documents folder
-cd Documents
-
-# Clone the repository
-git clone <YOUR_GIT_URL>
-
-# Go into the project folder
-cd archmedics-hms-offline-main
+git add .
 ```
+*(Don't forget the dot at the end! It means "everything".)*
 
-### Step 2: Install Dependencies
-
-This will download all the required packages (might take 2-5 minutes):
-
+### Step 2: Seal the Box (Git Commit)
+Now we tape the box shut and write a label on it so we know what's inside.
+Type this:
 ```bash
-npm install
+git commit -m "I added a cool new button"
 ```
+*(Change the message inside the quotes to describe what you actually did!)*
 
-### Step 3: Set Up Environment Variables
-
-1. Find the file named `.env.example` in the project folder.
-2. Copy and paste it, then rename the copy to `.env`.
-3. Open `.env` in VS Code.
-4. **Important**: Change the `JWT_SECRET` to something unique (like a long password):
-
-```env
-JWT_SECRET=change-this-to-something-secret-123
-```
-
-### Step 4: Set Up the Database
-
-Run these commands one by one to set up your local database:
-
+### Step 3: Send it to the Cloud (Git Push)
+Now we send the box to GitHub!
+Type this:
 ```bash
-# Create database tables
-npm run migrate:latest
-
-# Add sample data (admin user, HMO providers, etc.)
-npm run seed:run
+git push
 ```
 
-✅ **Success!** Your local database is ready.
+**🎉 That's it!** You successfully saved your work to the internet. You are a real developer now!
 
 ---
 
-## 🗄️ Database Setup
+## 🔑 Secret Passwords (Don't Tell Spies!)
 
-- **Local Development**: Uses **SQLite**. No installation needed. The file is created at `data/archmedics_hms.db`.
-- **Production (Railway)**: Uses **PostgreSQL**. This is set up automatically during deployment.
+When you log in, use these keys:
 
-### Useful Database Commands
-
-```bash
-# Run migrations (create tables)
-npm run migrate:latest
-
-# Reset database (WARNING: Deletes all data!)
-npm run db:reset
-```
+*   **Super Admin**: `admin@archmedics.com` (Password: `admin123`)
+*   **Doctor**: `doctor@archmedics.com` (Password: `doctor123`)
+*   **Nurse**: `nurse@archmedics.com` (Password: `nurse123`)
 
 ---
 
-## 🚀 Running the Application
+## 🐛 Uh Oh! Something Broke? (Troubleshooting)
 
-### Development Mode (Local)
-
-You need to open **TWO** Command Prompt windows to run the app.
-
-**Window 1 - Frontend (The visible part):**
-```bash
-npm run dev
-```
-- Runs at: http://localhost:8080
-
-**Window 2 - Backend (The logic part):**
-```bash
-npm run start:prod
-```
-- Runs at: http://localhost:3001
-
-### Access the Application
-
-1. Open your browser (Chrome, Edge, etc.).
-2. Go to: http://localhost:8080
-3. Login with default credentials (see below).
+*   **"Command not found"**: Did you install Node.js?
+*   **"Port already in use"**: You might have the server running twice. Close all the black windows and try again.
+*   **Red errors on screen**: Don't panic! Read the error message. It usually tells you exactly what went wrong.
 
 ---
 
-## 🌐 Deployment Guide
-
-This guide explains how to put your app on the internet. We use **Railway** for the backend (logic & database) and **Smartweb** for the frontend (visuals).
-
-### Part 1: Push Code to GitHub
-
-Before deploying, your code must be on GitHub.
-
-1. Create a new repository on GitHub.com.
-2. Run these commands in your project folder:
-   ```bash
-   git add .
-   git commit -m "Ready for deployment"
-   git branch -M main
-   git remote add origin <YOUR_GITHUB_REPO_URL>
-   git push -u origin main
-   ```
-
-### Part 2: Deploy Backend to Railway (GitHub + Railway)
-
-Railway hosts your backend for free!
-
-#### Step 1: Create Railway Account
-1. Go to https://railway.app/
-2. Click "Login" and select **"Login with GitHub"**.
-
-#### Step 2: Deploy Backend
-1. Click **"New Project"** → **"Deploy from GitHub repo"**.
-2. Select your `archmedics-hms-offline-main` repository.
-3. Click **"Deploy Now"**.
-
-#### Step 3: Add Variables
-1. Click on your project card.
-2. Go to the **"Variables"** tab.
-3. Add these variables:
-   - `NODE_ENV` = `production`
-   - `JWT_SECRET` = `(create a long random password)`
-   - `PORT` = `3001`
-
-#### Step 4: Add Database
-1. In your project view, click **"New"** (or Command+K) → **"Database"** → **"Add PostgreSQL"**.
-2. Railway will automatically connect it.
-3. Wait for the database to initialize.
-
-#### Step 5: Setup Database Tables
-1. Go to **"Settings"** tab of your Node.js service.
-2. Scroll to **"Deploy"** section.
-3. In **"Build Command"**, enter: `npm install && npm run build`
-4. In **"Start Command"**, enter: `npm run db:setup && npm run start:prod`
-   - *Note: `npm run db:setup` runs migrations every time you deploy.*
-
-#### Step 6: Get Your API URL
-1. Go to **"Settings"** → **"Networking"**.
-2. Under "Public Networking", click **"Generate Domain"**.
-3. Copy this URL (e.g., `https://archmedics-production.up.railway.app`).
-4. **Save this URL!** You need it for the frontend.
-
-### Part 3: Deploy Frontend to Smartweb
-
-#### Step 1: Connect Frontend to Backend
-1. Open `src/services/apiService.ts` (and `hmoService.ts` if separate).
-2. Find the `API_BASE_URL` line.
-3. Change it to your Railway URL:
-   ```typescript
-   // Example
-   const API_BASE_URL = 'https://archmedics-production.up.railway.app/api';
-   ```
-4. Save the file.
-
-#### Step 2: Build the Frontend
-Run this command to create the production files:
-```bash
-npm run build
-```
-This creates a `dist` folder.
-
-#### Step 3: Upload to Smartweb
-1. Login to your **cPanel** on Smartweb.
-2. Go to **"File Manager"**.
-3. Open the `public_html` folder (or your subdomain folder).
-4. Click **"Upload"**.
-5. Drag and drop **ALL FILES inside the `dist` folder** (index.html, assets folder, etc.).
-   - *Do not upload the `dist` folder itself, just its contents.*
-
-#### Step 4: Fix Routing (.htaccess)
-1. In File Manager, create a new file named `.htaccess`.
-2. Edit it and paste this code:
-   ```apache
-   <IfModule mod_rewrite.c>
-     RewriteEngine On
-     RewriteBase /
-     RewriteRule ^index\.html$ - [L]
-     RewriteCond %{REQUEST_FILENAME} !-f
-     RewriteCond %{REQUEST_FILENAME} !-d
-     RewriteRule . /index.html [L]
-   </IfModule>
-   ```
-3. Save.
-
-🎉 **Congratulations! Your Hospital System is LIVE!**
-
----
-
-## 🔑 Default Login Credentials
-
-**⚠️ CHANGE THESE AFTER LOGGING IN!**
-
-### Admin
-- **Email**: admin@archmedics.com
-- **Password**: admin123
-
-### Staff
-- **Doctor**: doctor@archmedics.com / doctor123
-- **Nurse**: nurse@archmedics.com / nurse123
-- **Cashier**: cashier@archmedics.com / cashier123
-- **Pharmacist**: pharmacist@archmedics.com / pharmacist123
-
----
-
-## 🔧 Troubleshooting
-
-### "npm command not found"
-- You didn't install Node.js. Install it and restart your computer.
-
-### "Port 3001 already in use"
-- The backend is already running in another window. Close it or use a different port in `.env`.
-
-### "Database locked"
-- Close all terminals and restart.
-
-### Frontend shows blank page on Smartweb
-- Did you upload the `.htaccess` file?
-- Did you upload the *contents* of `dist` and not the folder itself?
-
-### "Network Error" when logging in
-- Your frontend cannot reach the backend.
-- Check if your Railway URL is correct in the code.
-- Check if the Railway project is running (green status).
-
----
-
-## 💡 Need Help?
-
-1. **Read the error**: It usually tells you exactly what's wrong.
-2. **Check the steps**: Did you skip one?
-3. **Google it**: Copy the error message into Google.
-
----
-
-**Archmedics Hospital Management System**
+**Have fun building! 🧱**

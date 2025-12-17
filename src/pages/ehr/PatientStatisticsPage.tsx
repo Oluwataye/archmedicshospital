@@ -1,249 +1,360 @@
-
-import React, { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { 
-  BarChart, 
-  FileText, 
-  Users, 
-  Clock,
-  Calendar,
-  Filter
-} from 'lucide-react';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
-  ResponsiveContainer,
-  BarChart as RechartBarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell
-} from 'recharts';
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import * as Pop from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { Loader2, Users, Activity, FileText, TestTube, Pill, Calendar, TrendingUp, AlertCircle, Check, ChevronsUpDown } from 'lucide-react';
+import { usePatientManagement } from '@/hooks/usePatientManagement';
+import { useMedicalRecords } from '@/hooks/useMedicalRecords';
+import { useVitalSigns } from '@/hooks/useVitalSigns';
+import { useLabResults } from '@/hooks/useLabHooks';
+import { usePrescriptions } from '@/hooks/usePrescriptions';
+import { useAppointments } from '@/hooks/useAppointments';
+import { format, subDays, isAfter } from 'date-fns';
 
 const PatientStatisticsPage = () => {
-  const [timeRange, setTimeRange] = useState('month');
-  const [department, setDepartment] = useState('all');
+  const { patients, loading: patientsLoading } = usePatientManagement();
+  const [selectedPatientId, setSelectedPatientId] = useState<string>('');
+  const [openCombobox, setOpenCombobox] = useState(false);
 
-  // Sample data for charts
-  const patientAdmissionsData = [
-    { name: 'Jan', admissions: 120 },
-    { name: 'Feb', admissions: 135 },
-    { name: 'Mar', admissions: 145 },
-    { name: 'Apr', admissions: 130 },
-    { name: 'May', admissions: 150 },
-    { name: 'Jun', admissions: 158 },
-    { name: 'Jul', admissions: 162 },
-    { name: 'Aug', admissions: 145 },
-    { name: 'Sep', admissions: 140 },
-    { name: 'Oct', admissions: 155 },
-    { name: 'Nov', admissions: 165 },
-    { name: 'Dec', admissions: 170 },
-  ];
+  const { records, loading: recordsLoading } = useMedicalRecords(selectedPatientId);
+  const { vitalSigns, loading: vitalsLoading } = useVitalSigns(selectedPatientId);
+  const { results: labResults, loading: labsLoading } = useLabResults(selectedPatientId);
+  const { prescriptions, loading: rxLoading } = usePrescriptions(selectedPatientId);
+  const { appointments, loading: apptLoading } = useAppointments();
 
-  const averageLengthOfStayData = [
-    { name: 'Jan', days: 5.2 },
-    { name: 'Feb', days: 4.9 },
-    { name: 'Mar', days: 5.1 },
-    { name: 'Apr', days: 4.8 },
-    { name: 'May', days: 5.0 },
-    { name: 'Jun', days: 4.7 },
-    { name: 'Jul', days: 4.5 },
-    { name: 'Aug', days: 4.6 },
-    { name: 'Sep', days: 4.8 },
-    { name: 'Oct', days: 5.0 },
-    { name: 'Nov', days: 4.9 },
-    { name: 'Dec', days: 5.2 },
-  ];
+  const selectedPatient = patients.find(p => p.id === selectedPatientId);
+  const loading = recordsLoading || vitalsLoading || labsLoading || rxLoading || apptLoading;
 
-  const patientDemographicsData = [
-    { name: '0-18', value: 15 },
-    { name: '19-35', value: 25 },
-    { name: '36-50', value: 30 },
-    { name: '51-65', value: 20 },
-    { name: '66+', value: 10 },
-  ];
+  // Calculate statistics
+  const stats = {
+    totalRecords: records.length,
+    totalVitals: vitalSigns.length,
+    totalLabs: labResults.length,
+    totalPrescriptions: prescriptions.length,
+    totalAppointments: selectedPatientId
+      ? appointments.filter(a => a.patient_id === selectedPatientId).length
+      : 0,
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+    // Recent activity (last 30 days)
+    recentRecords: records.filter(r => {
+      const recordDate = new Date(r.record_date);
+      return isAfter(recordDate, subDays(new Date(), 30));
+    }).length,
+
+    recentVitals: vitalSigns.filter(v => {
+      const vitalDate = new Date(v.recorded_at);
+      return isAfter(vitalDate, subDays(new Date(), 30));
+    }).length,
+
+    // Record types breakdown
+    progressNotes: records.filter(r => r.record_type === 'progress').length,
+    soapNotes: records.filter(r => r.record_type === 'soap').length,
+    dischargeNotes: records.filter(r => r.record_type === 'discharge').length,
+    imagingStudies: records.filter(r => r.record_type === 'imaging').length,
+
+    // Lab status
+    pendingLabs: labResults.filter(l => l.status === 'pending').length,
+    completedLabs: labResults.filter(l => l.status === 'completed').length,
+    abnormalLabs: labResults.filter(l => l.abnormal_flag && l.abnormal_flag !== 'normal').length,
+
+    // Prescription status
+    activePrescriptions: prescriptions.filter(rx => rx.status === 'active').length,
+    completedPrescriptions: prescriptions.filter(rx => rx.status === 'completed').length,
+
+    // Appointment status
+    upcomingAppointments: selectedPatientId
+      ? appointments.filter(a =>
+        a.patient_id === selectedPatientId &&
+        (a.status === 'scheduled' || a.status === 'confirmed')
+      ).length
+      : 0,
+  };
+
+  // Overall patient statistics (all patients)
+  const overallStats = {
+    totalPatients: patients.length,
+    activePatients: patients.filter(p => p.status === 'active').length,
+    newPatients: patients.filter(p => {
+      const createdDate = new Date(p.created_at || '');
+      return isAfter(createdDate, subDays(new Date(), 30));
+    }).length,
+  };
+
+  const StatCard = ({ icon: Icon, title, value, subtitle, color = 'blue' }: any) => (
+    <Card className={`card-accent-${color} hover:shadow-lg transition-all hover:scale-105`}>
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">{title}</p>
+            <h2 className={`text-3xl font-bold text-${color}-600`}>{value}</h2>
+            {subtitle && <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>}
+          </div>
+          <div className={`h-12 w-12 bg-${color}-100 rounded-full flex items-center justify-center`}>
+            <Icon className={`h-6 w-6 text-${color}-600`} />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">Patient Statistics</h1>
-          <div className="text-sm text-gray-500 flex items-center mt-1">
-            <span>Health Records</span>
-            <span className="mx-2">›</span>
-            <span>Reports</span>
-            <span className="mx-2">›</span>
-            <span className="text-blue-500">Patient Statistics</span>
-          </div>
-        </div>
-        <div className="flex space-x-3">
-          <Button variant="outline" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" /> Export Report
-          </Button>
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-gray-800">Patient Analytics & Statistics</h1>
+        <div className="text-sm text-gray-500 flex items-center mt-1">
+          <span>Health Records</span>
+          <span className="mx-2">›</span>
+          <span className="text-blue-500">Analytics</span>
         </div>
       </div>
 
-      {/* Filters */}
+      {/* Overall Statistics */}
+      <div>
+        <h2 className="text-lg font-semibold mb-4">Overall Statistics</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <StatCard
+            icon={Users}
+            title="Total Patients"
+            value={overallStats.totalPatients}
+            subtitle="In the system"
+            color="blue"
+          />
+          <StatCard
+            icon={Activity}
+            title="Active Patients"
+            value={overallStats.activePatients}
+            subtitle="Currently active"
+            color="green"
+          />
+          <StatCard
+            icon={TrendingUp}
+            title="New Patients"
+            value={overallStats.newPatients}
+            subtitle="Last 30 days"
+            color="purple"
+          />
+        </div>
+      </div>
+
+      {/* Patient Selection */}
       <Card>
-        <CardContent className="p-4 flex flex-col md:flex-row md:items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-gray-500" />
-            <span className="text-sm font-medium">Time Period:</span>
+        <CardHeader>
+          <CardTitle>Select Patient for Detailed Analytics</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col space-y-4">
+            <Pop.Popover open={openCombobox} onOpenChange={setOpenCombobox}>
+              <Pop.PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={openCombobox}
+                  className="w-full justify-between"
+                >
+                  {selectedPatientId
+                    ? patients.find((patient) => String(patient.id) === selectedPatientId)
+                      ? `${patients.find((patient) => String(patient.id) === selectedPatientId)?.first_name} ${patients.find((patient) => String(patient.id) === selectedPatientId)?.last_name} - ${patients.find((patient) => String(patient.id) === selectedPatientId)?.mrn}`
+                      : "Select patient..."
+                    : "Select patient..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </Pop.PopoverTrigger>
+              <Pop.PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                <Command>
+                  <CommandInput placeholder="Search patient by name or MRN..." />
+                  <CommandEmpty>No patient found.</CommandEmpty>
+                  <CommandGroup>
+                    <CommandList>
+                      {patients.map((patient) => (
+                        <CommandItem
+                          key={patient.id}
+                          value={`${patient.first_name} ${patient.last_name} ${patient.mrn}`}
+                          onSelect={() => {
+                            setSelectedPatientId(String(patient.id) === selectedPatientId ? "" : String(patient.id));
+                            setOpenCombobox(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              selectedPatientId === String(patient.id) ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          <div className="flex flex-col">
+                            <span>{patient.first_name} {patient.last_name}</span>
+                            <span className="text-xs text-muted-foreground">MRN: {patient.mrn}</span>
+                          </div>
+                        </CommandItem>
+                      ))}
+                    </CommandList>
+                  </CommandGroup>
+                </Command>
+              </Pop.PopoverContent>
+            </Pop.Popover>
+
+            {selectedPatient && (
+              <div className="p-4 bg-blue-50 rounded-lg animate-in fade-in-0">
+                <h3 className="font-semibold text-blue-900">
+                  {selectedPatient.first_name} {selectedPatient.last_name}
+                </h3>
+                <p className="text-sm text-blue-700">MRN: {selectedPatient.mrn}</p>
+                <p className="text-sm text-blue-700">
+                  DOB: {format(new Date(selectedPatient.date_of_birth), 'MMM dd, yyyy')}
+                </p>
+              </div>
+            )}
           </div>
-          <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder="Select range" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="week">This Week</SelectItem>
-              <SelectItem value="month">This Month</SelectItem>
-              <SelectItem value="quarter">This Quarter</SelectItem>
-              <SelectItem value="year">This Year</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          <div className="flex items-center gap-2 ml-0 md:ml-4">
-            <Filter className="h-4 w-4 text-gray-500" />
-            <span className="text-sm font-medium">Department:</span>
-          </div>
-          <Select value={department} onValueChange={setDepartment}>
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder="All Departments" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Departments</SelectItem>
-              <SelectItem value="cardiology">Cardiology</SelectItem>
-              <SelectItem value="neurology">Neurology</SelectItem>
-              <SelectItem value="pediatrics">Pediatrics</SelectItem>
-              <SelectItem value="orthopedics">Orthopedics</SelectItem>
-              <SelectItem value="oncology">Oncology</SelectItem>
-            </SelectContent>
-          </Select>
         </CardContent>
       </Card>
 
-      {/* Patient Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardContent className="p-4 flex flex-col items-center">
-            <div className="flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-4">
-              <Users className="h-8 w-8 text-blue-500" />
+      {/* Patient-Specific Statistics */}
+      {selectedPatientId && (
+        <>
+          {loading ? (
+            <div className="flex items-center justify-center p-10">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+              <span className="ml-2">Loading patient statistics...</span>
             </div>
-            <h3 className="text-3xl font-bold text-center">1,247</h3>
-            <p className="text-gray-500 text-center mt-2">Total Patients</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex flex-col items-center">
-            <div className="flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-4">
-              <Users className="h-8 w-8 text-green-500" />
-            </div>
-            <h3 className="text-3xl font-bold text-center">85</h3>
-            <p className="text-gray-500 text-center mt-2">New Patients This Month</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex flex-col items-center">
-            <div className="flex items-center justify-center w-16 h-16 rounded-full bg-purple-100 mb-4">
-              <Clock className="h-8 w-8 text-purple-500" />
-            </div>
-            <h3 className="text-3xl font-bold text-center">4.8</h3>
-            <p className="text-gray-500 text-center mt-2">Average Length of Stay (Days)</p>
-          </CardContent>
-        </Card>
-      </div>
+          ) : (
+            <>
+              {/* Overview Stats */}
+              <div>
+                <h2 className="text-lg font-semibold mb-4">Patient Overview</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <StatCard
+                    icon={FileText}
+                    title="Medical Records"
+                    value={stats.totalRecords}
+                    subtitle={`${stats.recentRecords} in last 30 days`}
+                    color="blue"
+                  />
+                  <StatCard
+                    icon={Activity}
+                    title="Vital Signs"
+                    value={stats.totalVitals}
+                    subtitle={`${stats.recentVitals} recent readings`}
+                    color="green"
+                  />
+                  <StatCard
+                    icon={TestTube}
+                    title="Lab Results"
+                    value={stats.totalLabs}
+                    subtitle={`${stats.pendingLabs} pending`}
+                    color="purple"
+                  />
+                  <StatCard
+                    icon={Pill}
+                    title="Prescriptions"
+                    value={stats.totalPrescriptions}
+                    subtitle={`${stats.activePrescriptions} active`}
+                    color="orange"
+                  />
+                  <StatCard
+                    icon={Calendar}
+                    title="Appointments"
+                    value={stats.totalAppointments}
+                    subtitle={`${stats.upcomingAppointments} upcoming`}
+                    color="indigo"
+                  />
+                  {stats.abnormalLabs > 0 && (
+                    <StatCard
+                      icon={AlertCircle}
+                      title="Abnormal Labs"
+                      value={stats.abnormalLabs}
+                      subtitle="Requires attention"
+                      color="red"
+                    />
+                  )}
+                </div>
+              </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Patient Admissions Chart */}
-        <Card>
-          <CardContent className="p-4">
-            <h3 className="font-semibold text-lg mb-4 flex items-center">
-              <BarChart className="h-5 w-5 text-blue-500 mr-2" />
-              Patient Admissions
-            </h3>
-            <div className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <RechartBarChart data={patientAdmissionsData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="admissions" fill="#3B82F6" />
-                </RechartBarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+              {/* Clinical Documentation Breakdown */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Clinical Documentation Breakdown</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="text-center p-4 bg-blue-50 rounded-lg">
+                      <p className="text-2xl font-bold text-blue-600">{stats.progressNotes}</p>
+                      <p className="text-sm text-gray-600 mt-1">Progress Notes</p>
+                    </div>
+                    <div className="text-center p-4 bg-green-50 rounded-lg">
+                      <p className="text-2xl font-bold text-green-600">{stats.soapNotes}</p>
+                      <p className="text-sm text-gray-600 mt-1">SOAP Notes</p>
+                    </div>
+                    <div className="text-center p-4 bg-purple-50 rounded-lg">
+                      <p className="text-2xl font-bold text-purple-600">{stats.dischargeNotes}</p>
+                      <p className="text-sm text-gray-600 mt-1">Discharge Notes</p>
+                    </div>
+                    <div className="text-center p-4 bg-orange-50 rounded-lg">
+                      <p className="text-2xl font-bold text-orange-600">{stats.imagingStudies}</p>
+                      <p className="text-sm text-gray-600 mt-1">Imaging Studies</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
-        {/* Average Length of Stay Chart */}
-        <Card>
-          <CardContent className="p-4">
-            <h3 className="font-semibold text-lg mb-4 flex items-center">
-              <Clock className="h-5 w-5 text-purple-500 mr-2" />
-              Average Length of Stay
-            </h3>
-            <div className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={averageLengthOfStayData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="days" stroke="#8884d8" />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+              {/* Lab & Medication Status */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Lab Results Status</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">Completed</span>
+                        <span className="font-semibold text-green-600">{stats.completedLabs}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">Pending</span>
+                        <span className="font-semibold text-yellow-600">{stats.pendingLabs}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">Abnormal</span>
+                        <span className="font-semibold text-red-600">{stats.abnormalLabs}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
 
-        {/* Age Demographics Chart */}
-        <Card>
-          <CardContent className="p-4">
-            <h3 className="font-semibold text-lg mb-4 flex items-center">
-              <Users className="h-5 w-5 text-green-500 mr-2" />
-              Age Demographics
-            </h3>
-            <div className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={patientDemographicsData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {patientDemographicsData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Medication Status</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">Active</span>
+                        <span className="font-semibold text-green-600">{stats.activePrescriptions}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">Completed</span>
+                        <span className="font-semibold text-gray-600">{stats.completedPrescriptions}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">Total</span>
+                        <span className="font-semibold text-blue-600">{stats.totalPrescriptions}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </>
+          )}
+        </>
+      )}
     </div>
   );
 };

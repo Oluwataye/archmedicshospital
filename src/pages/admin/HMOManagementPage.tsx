@@ -12,6 +12,16 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export default function HMOManagementPage() {
     const [providers, setProviders] = useState<HMOProvider[]>([]);
@@ -20,6 +30,7 @@ export default function HMOManagementPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedProvider, setSelectedProvider] = useState<HMOProvider | undefined>(undefined);
     const [viewingProvider, setViewingProvider] = useState<HMOProvider | undefined>(undefined);
+    const [providerToDelete, setProviderToDelete] = useState<HMOProvider | undefined>(undefined);
 
     useEffect(() => {
         if (!viewingProvider) {
@@ -50,12 +61,13 @@ export default function HMOManagementPage() {
         setIsModalOpen(true);
     };
 
-    const handleDelete = async (provider: HMOProvider) => {
-        if (!window.confirm(`Are you sure you want to delete ${provider.name}?`)) return;
+    const handleDelete = async () => {
+        if (!providerToDelete) return;
 
         try {
-            await hmoService.deleteHMOProvider(provider.id);
+            await hmoService.deleteHMOProvider(providerToDelete.id);
             toast.success('Provider deleted successfully');
+            setProviderToDelete(undefined);
             loadProviders();
         } catch (error) {
             console.error('Error deleting provider:', error);
@@ -196,8 +208,8 @@ export default function HMOManagementPage() {
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
-                                                    title="Delete"
-                                                    onClick={() => handleDelete(provider)}
+                                                    title="Delete Provider"
+                                                    onClick={() => setProviderToDelete(provider)}
                                                     className="text-destructive hover:text-destructive"
                                                 >
                                                     <Trash2 className="h-4 w-4" />
@@ -218,6 +230,25 @@ export default function HMOManagementPage() {
                 onSave={handleSave}
                 provider={selectedProvider}
             />
+
+            {/* Delete Provider Confirmation */}
+            <AlertDialog open={!!providerToDelete} onOpenChange={() => setProviderToDelete(undefined)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete HMO Provider</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete {providerToDelete?.name}?
+                            This action cannot be undone and will remove all associated data.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

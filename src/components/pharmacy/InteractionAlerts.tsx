@@ -58,7 +58,6 @@ export default function InteractionAlerts({ result, showDetails = true }: Intera
             case 'Relative':
             case 'Moderate':
                 return 'default';
-            case 'Moderate':
             case 'Low':
                 return 'secondary';
             default:

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ApiService } from '@/services/apiService';
 import { Card, CardContent } from '@/components/ui/card';
@@ -56,11 +56,20 @@ interface VitalSigns {
 export default function PatientEMRPage() {
     const { patientId } = useParams<{ patientId: string }>();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const tabParam = searchParams.get('tab');
+
+    // Get current user info from auth context or localStorage
+    const userJson = localStorage.getItem('user');
+    const currentUser = userJson ? JSON.parse(userJson) : {};
+    const currentUserId = currentUser.id || '';
+    const currentUserRole = currentUser.role || 'doctor';
+    const isReadOnly = currentUserRole === 'ehr';
 
     // State management
     const [patient, setPatient] = useState<Patient | null>(null);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState('consult-notes');
+    const [activeTab, setActiveTab] = useState(tabParam || (currentUserRole === 'ehr' ? 'history' : 'consult-notes'));
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
     // Vital signs state
@@ -96,10 +105,6 @@ export default function PatientEMRPage() {
     const [isAddAllergyModalOpen, setIsAddAllergyModalOpen] = useState(false);
     const [isAddHistoryModalOpen, setIsAddHistoryModalOpen] = useState(false);
 
-    // Get current user info from auth context or localStorage
-    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-    const currentUserId = currentUser.id || '';
-    const currentUserRole = currentUser.role || 'doctor';
 
     // Load patient data on mount
     useEffect(() => {
@@ -194,7 +199,27 @@ export default function PatientEMRPage() {
     };
 
     const handleBack = () => {
-        navigate(-1);
+        if (window.history.state && window.history.state.idx > 0) {
+            navigate(-1);
+        } else {
+            // Fallback navigation based on roles if no history exists
+            switch (currentUserRole) {
+                case 'doctor':
+                    navigate('/doctor/patients');
+                    break;
+                case 'nurse':
+                    navigate('/nurse/patients');
+                    break;
+                case 'ehr':
+                    navigate('/ehr/patient-management');
+                    break;
+                case 'admin':
+                    navigate('/admin/patients');
+                    break;
+                default:
+                    navigate('/');
+            }
+        }
     };
 
     const handleShare = () => {
@@ -500,7 +525,7 @@ export default function PatientEMRPage() {
                                 consultNotes={consultNotes}
                                 currentUserId={currentUserId}
                                 currentUserRole={currentUserRole}
-                                onCreateNote={handleCreateNote}
+                                onCreateNote={isReadOnly ? undefined : handleCreateNote}
                                 onEditNote={handleEditNote}
                                 onViewNote={handleViewNote}
                                 onDeleteNote={handleDeleteNote}
@@ -511,7 +536,7 @@ export default function PatientEMRPage() {
                         <TabsContent value="prescriptions" className="mt-6">
                             <PrescriptionsTab
                                 prescriptions={prescriptions}
-                                onAddPrescription={() => setIsNewPrescriptionModalOpen(true)}
+                                onAddPrescription={isReadOnly ? undefined : () => setIsNewPrescriptionModalOpen(true)}
                             />
                         </TabsContent>
 
@@ -519,7 +544,7 @@ export default function PatientEMRPage() {
                         <TabsContent value="lab-results" className="mt-6">
                             <LabResultsTab
                                 labResults={labResults}
-                                onOrderLab={() => setIsOrderLabModalOpen(true)}
+                                onOrderLab={isReadOnly ? undefined : () => setIsOrderLabModalOpen(true)}
                             />
                         </TabsContent>
 
@@ -527,7 +552,7 @@ export default function PatientEMRPage() {
                         <TabsContent value="imaging" className="mt-6">
                             <ImagingTab
                                 imagingResults={imagingResults}
-                                onOrderImaging={() => setIsOrderImagingModalOpen(true)}
+                                onOrderImaging={isReadOnly ? undefined : () => setIsOrderImagingModalOpen(true)}
                             />
                         </TabsContent>
 
@@ -537,7 +562,7 @@ export default function PatientEMRPage() {
                                 patientId={patient.id}
                                 patientName={`${patient.first_name} ${patient.last_name}`}
                                 vitalSigns={vitalSigns}
-                                onAddRecordClick={() => setIsAddVitalsModalOpen(true)}
+                                onAddRecordClick={isReadOnly ? undefined : () => setIsAddVitalsModalOpen(true)}
                             />
                         </TabsContent>
 
@@ -545,7 +570,7 @@ export default function PatientEMRPage() {
                         <TabsContent value="allergies" className="mt-6">
                             <AllergiesTab
                                 allergies={allergies}
-                                onAddRecordClick={() => setIsAddAllergyModalOpen(true)}
+                                onAddRecordClick={isReadOnly ? undefined : () => setIsAddAllergyModalOpen(true)}
                             />
                         </TabsContent>
 
@@ -553,7 +578,7 @@ export default function PatientEMRPage() {
                         <TabsContent value="history" className="mt-6">
                             <MedicalHistoryTab
                                 medicalHistory={medicalHistory}
-                                onAddRecordClick={() => setIsAddHistoryModalOpen(true)}
+                                onAddRecordClick={isReadOnly ? undefined : () => setIsAddHistoryModalOpen(true)}
                             />
                         </TabsContent>
                     </Tabs>

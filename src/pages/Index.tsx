@@ -33,6 +33,9 @@ const Index = () => {
           case 'cashier': // Added cashier role
             navigate('/cashier');
             break;
+          case 'ehr':
+            navigate('/ehr');
+            break;
           default:
             navigate('/dashboard'); // Fallback
         }

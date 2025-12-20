@@ -34,10 +34,12 @@ const AllergiesTab: React.FC<AllergiesTabProps> = ({ allergies, onAddRecordClick
                     <ShieldAlert className="h-5 w-5 text-destructive" />
                     Allergies & Intolerances
                 </h3>
-                <Button onClick={onAddRecordClick} size="sm" variant="outline" className="border-destructive/50 hover:bg-destructive/10 text-destructive">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Allergy
-                </Button>
+                {onAddRecordClick && (
+                    <Button onClick={onAddRecordClick} size="sm" variant="outline" className="border-destructive/50 hover:bg-destructive/10 text-destructive">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Allergy
+                    </Button>
+                )}
             </div>
 
             <Card>

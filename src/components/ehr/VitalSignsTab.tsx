@@ -182,10 +182,12 @@ const VitalSignsTab: React.FC<VitalSignsTabProps> = ({ patientId, patientName, v
                     <Activity className="h-5 w-5 text-primary" />
                     Vital Signs History
                 </h3>
-                <Button onClick={onAddRecordClick} size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Vitals
-                </Button>
+                {onAddRecordClick && (
+                    <Button onClick={onAddRecordClick} size="sm">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Vitals
+                    </Button>
+                )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

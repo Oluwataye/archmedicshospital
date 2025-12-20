@@ -39,7 +39,7 @@ const StaffSchedulePage = () => {
     const fetchData = async () => {
         try {
             // Fetch users for dropdown
-            const usersRes = await fetch('http://localhost:3001/api/users', {
+            const usersRes = await fetch('/api/users', {
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
             if (usersRes.ok) setUsers(await usersRes.json());
@@ -51,7 +51,7 @@ const StaffSchedulePage = () => {
             // Actually, I defined /api/users/schedules in user routes? No, staff.routes.ts has /schedules
 
             // I'll fetch assuming I'll mount staff.routes at /api/staff
-            const scheduleRes = await fetch('http://localhost:3001/api/staff/schedules', {
+            const scheduleRes = await fetch('/api/staff/schedules', {
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
             if (scheduleRes.ok) setSchedules(await scheduleRes.json());
@@ -68,7 +68,7 @@ const StaffSchedulePage = () => {
             const startDateTime = `${formData.date}T${formData.start_time}:00`;
             const endDateTime = `${formData.date}T${formData.end_time}:00`;
 
-            const response = await fetch('http://localhost:3001/api/staff/schedules', {
+            const response = await fetch('/api/staff/schedules', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

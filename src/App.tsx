@@ -298,7 +298,7 @@ function AppRoutes() {
           </ProtectedRoute>
         } />
         <Route path="doctor/patient-emr/:patientId" element={
-          <ProtectedRoute allowedRoles={['doctor', 'admin', 'nurse']}>
+          <ProtectedRoute allowedRoles={['doctor', 'admin', 'nurse', 'ehr']}>
             <PatientEMRPage />
           </ProtectedRoute>
         } />

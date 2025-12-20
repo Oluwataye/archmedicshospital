@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { usePatientManagement } from '@/hooks/usePatientManagement';
 import PatientListTable from '@/components/ehr/patient-management/PatientListTable';
 import PatientRegistrationModal from '@/components/ehr/PatientRegistrationModal';
@@ -6,12 +7,13 @@ import PatientManagementHeader from '@/components/ehr/patient-management/Patient
 import PatientSearchFilters from '@/components/ehr/patient-management/PatientSearchFilters';
 import PatientOverviewStats from '@/components/ehr/patient-management/PatientOverviewStats';
 import PatientsTablePagination from '@/components/ehr/patient-management/PatientsTablePagination';
-import MedicalHistoryModal from '@/components/ehr/MedicalHistoryModal';
+// import MedicalHistoryModal from '@/components/ehr/MedicalHistoryModal';
 import ShareRecordsModal from '@/components/ehr/ShareRecordsModal';
 import WardAssignmentModal from '@/components/ehr/WardAssignmentModal';
 import PatientStatisticsModal from '@/components/ehr/PatientStatisticsModal';
 
 const PatientManagementPage = () => {
+  const navigate = useNavigate();
   const {
     patients,
     filteredPatients,
@@ -33,15 +35,14 @@ const PatientManagementPage = () => {
 
   // Action Modals State
   const [selectedPatient, setSelectedPatient] = useState<any>(null);
-  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  // const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isWardModalOpen, setIsWardModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Handlers
   const handleViewMedicalHistory = (patient: any) => {
-    setSelectedPatient(patient);
-    setIsHistoryModalOpen(true);
+    navigate(`/ehr/patient-records?id=${patient.id}&tab=history`);
   };
 
   const handleShareRecords = (patient: any) => {
@@ -125,12 +126,12 @@ const PatientManagementPage = () => {
 
       {selectedPatient && (
         <>
-          <MedicalHistoryModal
+          {/* <MedicalHistoryModal
             open={isHistoryModalOpen}
             onOpenChange={setIsHistoryModalOpen}
             patientId={selectedPatient.id}
             patientName={selectedPatient.name}
-          />
+          /> */}
 
           <ShareRecordsModal
             open={isShareModalOpen}

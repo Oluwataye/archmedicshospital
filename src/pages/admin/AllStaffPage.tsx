@@ -45,7 +45,7 @@ const AllStaffPage = () => {
     const fetchStaff = async () => {
         try {
             // Note: need to add this method to ApiService or use custom fetch
-            const response = await fetch('http://localhost:3001/api/users', {
+            const response = await fetch('/api/users', {
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
             if (response.ok) {
@@ -62,7 +62,7 @@ const AllStaffPage = () => {
 
     const handleCreateUser = async () => {
         try {
-            const response = await fetch('http://localhost:3001/api/users', {
+            const response = await fetch('/api/users', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -61,6 +61,11 @@ export default function ConsultNotesTab({
             return { allowed: true };
         }
 
+        // EHR users can never edit
+        if (currentUserRole === 'ehr') {
+            return { allowed: false, reason: 'EHR users cannot edit consult notes' };
+        }
+
         // Check ownership
         if (note.provider_id !== currentUserId) {
             return { allowed: false, reason: 'You can only edit your own notes' };
@@ -81,6 +86,7 @@ export default function ConsultNotesTab({
     // Check if note can be deleted
     const canDeleteNote = (note: ConsultNote): boolean => {
         if (currentUserRole === 'admin') return true;
+        if (currentUserRole === 'ehr') return false;
         if (note.provider_id === currentUserId) return true;
         return false;
     };
@@ -122,10 +128,12 @@ export default function ConsultNotesTab({
                         Patient consultation history and progress notes
                     </p>
                 </div>
-                <Button onClick={onCreateNote}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    New Consult Note
-                </Button>
+                {currentUserRole !== 'ehr' && (
+                    <Button onClick={onCreateNote}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        New Consult Note
+                    </Button>
+                )}
             </div>
 
             {/* Search Bar */}
@@ -145,7 +153,7 @@ export default function ConsultNotesTab({
                     <p className="text-muted-foreground mb-4">
                         {searchQuery ? 'No matching consult notes found' : 'No consult notes found'}
                     </p>
-                    {!searchQuery && (
+                    {!searchQuery && currentUserRole !== 'ehr' && (
                         <Button onClick={onCreateNote} variant="outline">
                             <Plus className="h-4 w-4 mr-2" />
                             Create First Note

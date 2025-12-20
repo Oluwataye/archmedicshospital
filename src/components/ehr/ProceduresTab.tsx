@@ -7,7 +7,7 @@ import { Stethoscope, Plus, FileText } from 'lucide-react';
 interface ProceduresTabProps {
     patientId: string;
     procedures: any[];
-    onAddRecordClick: () => void;
+    onAddRecordClick?: () => void;
 }
 
 const ProceduresTab: React.FC<ProceduresTabProps> = ({ patientId, procedures, onAddRecordClick }) => {
@@ -24,10 +24,12 @@ const ProceduresTab: React.FC<ProceduresTabProps> = ({ patientId, procedures, on
                     <Stethoscope className="h-5 w-5 text-primary" />
                     Surgical & Medical Procedures
                 </h3>
-                <Button onClick={onAddRecordClick} size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Procedure
-                </Button>
+                {onAddRecordClick && (
+                    <Button onClick={onAddRecordClick} size="sm">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Procedure
+                    </Button>
+                )}
             </div>
 
             <Card>

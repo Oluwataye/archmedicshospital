@@ -5,7 +5,7 @@ import { healthRecordsService } from '@/services/healthRecordsService';
 import { ApiService } from '@/services/apiService';
 import { FileText, Activity, ListFilter, AlertTriangle, Clock } from 'lucide-react';
 import { TabsContent } from '@/components/ui/tabs';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
 // Import refactored components
@@ -37,6 +37,9 @@ const defaultVitalSigns = {
 const PatientRecordsPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const patientIdParam = searchParams.get('id');
+  const tabParam = searchParams.get('tab');
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [department, setDepartment] = useState('all');
@@ -51,6 +54,17 @@ const PatientRecordsPage = () => {
   const [procedures, setProcedures] = useState<any[]>([]);
   const [medicalHistory, setMedicalHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // Auto-select patient from URL params
+  useEffect(() => {
+    if (patientIdParam && patients.length > 0 && !selectedPatient) {
+      const patient = patients.find(p => String(p.id) === patientIdParam);
+      if (patient) {
+        setSelectedPatient(patient);
+        if (tabParam) setActiveTab(tabParam);
+      }
+    }
+  }, [patientIdParam, patients, tabParam, selectedPatient]);
 
   // Debounce search term
   useEffect(() => {
@@ -110,9 +124,10 @@ const PatientRecordsPage = () => {
   // Load patient records when selected patient changes
   useEffect(() => {
     if (selectedPatient) {
-      // If doctor or nurse, navigate immediately to their EMR view
-      if (user?.role === 'doctor' || user?.role === 'admin' || user?.role === 'nurse') {
-        navigate(`/doctor/patient-emr/${selectedPatient.id}`);
+      // If doctor, nurse, or EHR, navigate immediately to their EMR view
+      if (user?.role === 'doctor' || user?.role === 'admin' || user?.role === 'nurse' || user?.role === 'ehr') {
+        const query = tabParam ? `?tab=${tabParam}` : '';
+        navigate(`/doctor/patient-emr/${selectedPatient.id}${query}`, { replace: true });
         return;
       }
       loadPatientData();
@@ -157,8 +172,8 @@ const PatientRecordsPage = () => {
       const procedureRecords = healthRecordsService.getRecordsByType(selectedPatient.id, 'procedures');
       setProcedures(procedureRecords);
 
-      // Get History
-      const historyRecords = healthRecordsService.getRecordsByType(selectedPatient.id, 'history');
+      // Get Aggregated History from REAL API
+      const historyRecords = await ApiService.getPatientMedicalHistory(selectedPatient.id);
       setMedicalHistory(historyRecords);
     } catch (error) {
       console.error('Error loading patient data:', error);

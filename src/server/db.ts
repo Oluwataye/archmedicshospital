@@ -11,22 +11,43 @@ let environment = (process.env.NODE_ENV === 'development' && !isNetlifyFunctiona
 console.log(`[DB] Environment Selected: ${environment}`);
 console.log(`[DB] Netlify: ${isNetlifyFunctional}, HAS_DB_URL: ${hasDatabaseUrl}`);
 
-// Safeguard against SQLite crash in production
-if (environment === 'production' && !hasDatabaseUrl && !process.env.DB_HOST) {
-    console.error('********************************************************************************');
-    console.error('CRITICAL ERROR: PRODUCTION DATABASE NOT CONFIGURED.');
-    console.error('Please set DATABASE_URL in your Netlify Environment Variables.');
-    console.error('Note: The app is staying alive to allow /api/test diagnostics.');
-    console.error('********************************************************************************');
-}
+// Lazy database initialization to prevent top-level crashes
+let dbInstance: any = null;
 
-let db: any;
-try {
-    db = knex(config[environment]);
-} catch (err) {
-    console.error('[DB] Initialization failed:', err);
-    // Fallback to development to prevent total crash, though queries will fail
-    db = knex(config['development']);
-}
+const getDb = () => {
+    if (dbInstance) return dbInstance;
+
+    console.log(`[DB] Initializing for environment: ${environment}`);
+
+    // Safeguard against SQLite crash in production
+    if (environment === 'production' && !hasDatabaseUrl && !process.env.DB_HOST) {
+        console.error('********************************************************************************');
+        console.error('CRITICAL ERROR: PRODUCTION DATABASE NOT CONFIGURED.');
+        console.error('Please set DATABASE_URL in your Netlify Environment Variables.');
+        console.error('********************************************************************************');
+        // We still try to initialize but it will likely fail on first query
+    }
+
+    try {
+        dbInstance = knex(config[environment]);
+        return dbInstance;
+    } catch (err) {
+        console.error('[DB] Initialization failed:', err);
+        throw err;
+    }
+};
+
+// Export a proxy or just a placeholder - for now, we'll keep the export but be careful
+// Most routes use 'import db from "../db"', so we'll export a proxy or initialize late
+const db = new Proxy({}, {
+    get: (target, prop) => {
+        const instance = getDb();
+        return instance[prop];
+    },
+    apply: (target, thisArg, argumentsList) => {
+        const instance = getDb();
+        return instance.apply(thisArg, argumentsList);
+    }
+}) as any;
 
 export default db;

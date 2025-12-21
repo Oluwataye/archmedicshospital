@@ -11,17 +11,20 @@ export const logger = winston.createLogger({
   format: logFormat,
   defaultMeta: { service: 'archmedics-hms' },
   transports: [
-    new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
-    new winston.transports.File({ filename: 'logs/combined.log' }),
+    new winston.transports.Console({
+      format: process.env.NODE_ENV === 'production'
+        ? logFormat
+        : winston.format.combine(
+          winston.format.colorize(),
+          winston.format.simple()
+        )
+    })
   ],
 });
 
+// Add file transports only in development
 if (process.env.NODE_ENV !== 'production') {
-  logger.add(new winston.transports.Console({
-    format: winston.format.combine(
-      winston.format.colorize(),
-      winston.format.simple()
-    )
-  }));
+  logger.add(new winston.transports.File({ filename: 'logs/error.log', level: 'error' }));
+  logger.add(new winston.transports.File({ filename: 'logs/combined.log' }));
 }
 

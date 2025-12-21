@@ -1,10 +1,3 @@
-console.log('--- FRONTEND MAIN.TSX LOADING ---');
-window.addEventListener('error', (e) => {
-  console.log('--- FRONTEND ERROR ---', e.message, e.error);
-});
-window.addEventListener('unhandledrejection', (e) => {
-  console.log('--- FRONTEND PROMISE REJECTION ---', e.reason);
-});
 
 import { createRoot } from 'react-dom/client'
 import React from 'react'

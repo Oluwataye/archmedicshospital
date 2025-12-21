@@ -1,7 +1,9 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 
 // API Configuration
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+const API_BASE_URL = (import.meta.env.PROD || import.meta.env.MODE === 'production')
+  ? '/api'
+  : (import.meta.env.VITE_API_BASE_URL || '/api');
 
 // Create axios instance
 const apiClient: AxiosInstance = axios.create({

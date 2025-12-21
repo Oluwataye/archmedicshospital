@@ -34,9 +34,8 @@ const format = winston.format.combine(
     ),
 );
 
-// Create logs directory if it doesn't exist
-// Create logs directory if it doesn't exist AND not in production
-if (process.env.NODE_ENV !== 'production') {
+// Create logs directory if it doesn't exist AND not in production/Netlify
+if (process.env.NODE_ENV !== 'production' && !process.env.NETLIFY) {
     const logsDir = path.join(process.cwd(), 'logs');
     if (!fs.existsSync(logsDir)) {
         fs.mkdirSync(logsDir, { recursive: true });

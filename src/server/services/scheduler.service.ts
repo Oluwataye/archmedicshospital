@@ -4,9 +4,11 @@ import db from '../db';
 
 const BACKUP_DIR = path.join(process.cwd(), 'backups');
 
-// Ensure backup directory exists
-if (!fs.existsSync(BACKUP_DIR)) {
-    fs.mkdirSync(BACKUP_DIR, { recursive: true });
+// Ensure backup directory exists (only in non-production/non-Netlify environments)
+if (process.env.NODE_ENV !== 'production' && !process.env.NETLIFY) {
+    if (!fs.existsSync(BACKUP_DIR)) {
+        fs.mkdirSync(BACKUP_DIR, { recursive: true });
+    }
 }
 
 export const startScheduler = () => {

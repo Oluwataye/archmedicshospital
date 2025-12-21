@@ -1,8 +1,12 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 
 // API Configuration
-const isProduction = import.meta.env.PROD || import.meta.env.MODE === 'production' || (typeof window !== 'undefined' && window.location.hostname !== 'localhost');
-const API_BASE_URL = isProduction ? '/api' : (import.meta.env.VITE_API_BASE_URL || '/api');
+const isLocalhost = typeof window !== 'undefined' &&
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+const API_BASE_URL = isLocalhost
+  ? (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api')
+  : '/api';
 
 // Create axios instance
 export const apiClient: AxiosInstance = axios.create({

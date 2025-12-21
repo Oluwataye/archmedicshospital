@@ -1,4 +1,3 @@
-import axios from 'axios';
 import type {
     HMOProvider,
     CreateHMOProviderDTO,
@@ -8,22 +7,7 @@ import type {
     CreateHMOTariffDTO,
     EligibilityCheckResult,
 } from '@/types/hmo';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://archmedics-production.up.railway.app/api';
-
-// Create axios instance with auth token
-const apiClient = axios.create({
-    baseURL: API_BASE_URL,
-});
-
-// Add auth token to requests
-apiClient.interceptors.request.use((config) => {
-    const token = localStorage.getItem('authToken');
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-});
+import { apiClient } from './apiService';
 
 export class HMOService {
     // HMO Provider Management

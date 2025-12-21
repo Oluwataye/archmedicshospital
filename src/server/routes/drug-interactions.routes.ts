@@ -158,8 +158,8 @@ router.get('/interactions', auth, async (req, res) => {
         }
 
         if (search) {
-            query = query.where(function () {
-                this.where('drug_a', 'like', `%${search}%`)
+            query = query.where((qb) => {
+                qb.where('drug_a', 'like', `%${search}%`)
                     .orWhere('drug_b', 'like', `%${search}%`);
             });
         }
@@ -181,8 +181,8 @@ router.get('/contraindications', auth, async (req, res) => {
         let query = db('drug_contraindications');
 
         if (search) {
-            query = query.where(function () {
-                this.where('drug_name', 'like', `%${search}%`)
+            query = query.where((qb) => {
+                qb.where('drug_name', 'like', `%${search}%`)
                     .orWhere('condition', 'like', `%${search}%`);
             });
         }
@@ -204,8 +204,8 @@ router.get('/allergy-interactions', auth, async (req, res) => {
         let query = db('allergy_interactions');
 
         if (search) {
-            query = query.where(function () {
-                this.where('allergen', 'like', `%${search}%`)
+            query = query.where((qb) => {
+                qb.where('allergen', 'like', `%${search}%`)
                     .orWhere('drug_name', 'like', `%${search}%`);
             });
         }

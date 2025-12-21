@@ -18,8 +18,8 @@ router.get('/service-codes', auth, asyncHandler(async (req: Request, res: Respon
     }
 
     if (search) {
-        query = query.where(function () {
-            this.where('code', 'like', `%${search}%`)
+        query = query.where((qb) => {
+            qb.where('code', 'like', `%${search}%`)
                 .orWhere('description', 'like', `%${search}%`);
         });
     }
@@ -143,8 +143,8 @@ router.get('/service-codes/:id/tariffs', auth, asyncHandler(async (req: Request,
         .join('hmo_providers', 'hmo_tariffs.hmo_provider_id', 'hmo_providers.id')
         .where('hmo_tariffs.service_code_id', id)
         .where('hmo_tariffs.effective_from', '<=', new Date().toISOString().split('T')[0])
-        .where(function () {
-            this.whereNull('hmo_tariffs.effective_to')
+        .where((qb) => {
+            qb.whereNull('hmo_tariffs.effective_to')
                 .orWhere('hmo_tariffs.effective_to', '>=', new Date().toISOString().split('T')[0]);
         });
 
@@ -169,8 +169,8 @@ router.get('/tariff', auth, asyncHandler(async (req: Request, res: Response) => 
         .where('service_code_id', service_code_id)
         .where('hmo_provider_id', hmo_provider_id)
         .where('effective_from', '<=', new Date().toISOString().split('T')[0])
-        .where(function () {
-            this.whereNull('effective_to')
+        .where((qb) => {
+            qb.whereNull('effective_to')
                 .orWhere('effective_to', '>=', new Date().toISOString().split('T')[0]);
         })
         .first();

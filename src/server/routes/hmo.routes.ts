@@ -403,8 +403,8 @@ router.post('/check-coverage', auth, asyncHandler(async (req: Request, res: Resp
         .where('hmo_provider_id', patient.hmo_provider_id)
         .where('service_code_id', service_code_id)
         .where('effective_from', '<=', new Date().toISOString().split('T')[0])
-        .where(function () {
-            this.whereNull('effective_to')
+        .where((qb) => {
+            qb.whereNull('effective_to')
                 .orWhere('effective_to', '>=', new Date().toISOString().split('T')[0]);
         })
         .first();

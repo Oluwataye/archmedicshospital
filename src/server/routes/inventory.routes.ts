@@ -17,8 +17,8 @@ router.get('/items', auth, asyncHandler(async (req, res) => {
         .leftJoin('suppliers', 'inventory_items.preferred_supplier_id', 'suppliers.id');
 
     if (search) {
-        query = query.where(function () {
-            this.where('inventory_items.name', 'like', `%${search}%`)
+        query = query.where((qb) => {
+            qb.where('inventory_items.name', 'like', `%${search}%`)
                 .orWhere('inventory_items.generic_name', 'like', `%${search}%`)
                 .orWhere('inventory_items.sku', 'like', `%${search}%`);
         });

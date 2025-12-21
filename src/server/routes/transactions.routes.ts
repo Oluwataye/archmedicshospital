@@ -49,8 +49,8 @@ router.get('/', auth, asyncHandler(async (req, res) => {
     }
 
     if (search) {
-        query = query.where(function () {
-            this.where('transactions.reference_number', 'like', `%${search}%`)
+        query = query.where((qb) => {
+            qb.where('transactions.reference_number', 'like', `%${search}%`)
                 .orWhere('patients.first_name', 'like', `%${search}%`)
                 .orWhere('patients.last_name', 'like', `%${search}%`);
         });

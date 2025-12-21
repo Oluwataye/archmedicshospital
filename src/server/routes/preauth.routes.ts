@@ -341,8 +341,8 @@ router.get('/patient/:patientId/active', auth, asyncHandler(async (req: Request,
         .where('hmo_preauthorizations.patient_id', patientId)
         .where('hmo_preauthorizations.status', 'approved')
         .where('hmo_preauthorizations.expiry_date', '>=', new Date().toISOString().split('T')[0])
-        .andWhere(function () {
-            this.where('hmo_preauthorizations.is_used', false)
+        .andWhere((qb) => {
+            qb.where('hmo_preauthorizations.is_used', false)
                 .orWhere('hmo_preauthorizations.verified_at', '>=', new Date().toISOString().split('T')[0]);
         })
         .orderBy('hmo_preauthorizations.created_at', 'desc')

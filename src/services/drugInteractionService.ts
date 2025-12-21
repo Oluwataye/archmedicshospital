@@ -56,17 +56,17 @@ export class DrugInteractionService {
 
                 // Check both directions (A-B and B-A)
                 const foundInteractions = await db('drug_interactions')
-                    .where(function () {
-                        this.where({ drug_a: drugA, drug_b: drugB })
+                    .where((qb) => {
+                        qb.where({ drug_a: drugA, drug_b: drugB })
                             .orWhere({ drug_a: drugB, drug_b: drugA });
                     })
-                    .orWhere(function () {
+                    .orWhere((qb) => {
                         // Also check for partial matches (e.g., "Aspirin 81mg" matches "Aspirin")
-                        this.where('drug_a', 'like', `%${drugA}%`)
+                        qb.where('drug_a', 'like', `%${drugA}%`)
                             .andWhere('drug_b', 'like', `%${drugB}%`);
                     })
-                    .orWhere(function () {
-                        this.where('drug_a', 'like', `%${drugB}%`)
+                    .orWhere((qb) => {
+                        qb.where('drug_a', 'like', `%${drugB}%`)
                             .andWhere('drug_b', 'like', `%${drugA}%`);
                     });
 

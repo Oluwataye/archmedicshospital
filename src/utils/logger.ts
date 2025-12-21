@@ -1,4 +1,3 @@
-console.log('--- ROOT LOGGER INITIALIZING ---');
 import winston from 'winston';
 
 const logFormat = winston.format.combine(

@@ -138,12 +138,14 @@ app.get('/api/test', (req, res) => {
     res.json({
         message: 'Server is running with latest code!',
         timestamp: new Date().toISOString(),
-        env: {
+        env_diagnostics: {
             NODE_ENV: process.env.NODE_ENV,
             NETLIFY: !!process.env.NETLIFY,
-            CONTEXT: !!process.env.CONTEXT,
-            HAS_DB_URL: !!process.env.DATABASE_URL
-        }
+            CONTEXT: process.env.CONTEXT || 'unknown',
+            HAS_DB_URL: !!process.env.DATABASE_URL,
+            LAMBDA: !!process.env.LAMBDA_TASK_ROOT || !!process.env.LAMBDA_RUNTIME_DIR
+        },
+        troubleshooting: 'If HAS_DB_URL is false, add DATABASE_URL to your Netlify Environment Variables.'
     });
 });
 

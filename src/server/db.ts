@@ -13,9 +13,20 @@ console.log(`[DB] Netlify: ${isNetlifyFunctional}, HAS_DB_URL: ${hasDatabaseUrl}
 
 // Safeguard against SQLite crash in production
 if (environment === 'production' && !hasDatabaseUrl && !process.env.DB_HOST) {
-    throw new Error('PRODUCTION DATABASE NOT CONFIGURED. Please set DATABASE_URL in your environment variables.');
+    console.error('********************************************************************************');
+    console.error('CRITICAL ERROR: PRODUCTION DATABASE NOT CONFIGURED.');
+    console.error('Please set DATABASE_URL in your Netlify Environment Variables.');
+    console.error('Note: The app is staying alive to allow /api/test diagnostics.');
+    console.error('********************************************************************************');
 }
 
-const db = knex(config[environment]);
+let db: any;
+try {
+    db = knex(config[environment]);
+} catch (err) {
+    console.error('[DB] Initialization failed:', err);
+    // Fallback to development to prevent total crash, though queries will fail
+    db = knex(config['development']);
+}
 
 export default db;

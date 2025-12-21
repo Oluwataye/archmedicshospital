@@ -4,18 +4,7 @@ import db from '../db';
 
 const BACKUP_DIR = path.join(process.cwd(), 'backups');
 
-const isProduction = process.env.NODE_ENV === 'production' || !!process.env.NETLIFY;
-
-// Ensure backup directory exists (only in non-production/non-Netlify environments)
-if (!isProduction && !process.env.NETLIFY) {
-    if (!fs.existsSync(BACKUP_DIR)) {
-        try {
-            fs.mkdirSync(BACKUP_DIR, { recursive: true });
-        } catch (e) {
-            console.warn('Auto-backups disabled - could not create backup directory');
-        }
-    }
-}
+// Backup directory handled externally or via cloud storage
 
 export const startScheduler = () => {
     console.log('Starting backup scheduler...');

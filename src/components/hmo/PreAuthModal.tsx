@@ -59,7 +59,7 @@ export default function PreAuthModal({ isOpen, onClose, onSuccess }: PreAuthModa
 
             // Fetch service codes from NHIS API
             const token = localStorage.getItem('authToken');
-            const response = await fetch('http://localhost:3001/api/nhis/service-codes', {
+            const response = await fetch('/api/nhis/service-codes', {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }

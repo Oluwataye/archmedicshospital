@@ -3,7 +3,8 @@
   publish = "dist"
 
 [functions]
-  directory = "netlify/functions"
+  node_bundler = "esbuild"
+  external_node_modules = ["mysql", "mysql2", "better-sqlite3", "sqlite3", "tedious", "oracledb", "pg-query-stream", "canvas"]
 
 [[redirects]]
   from = "/api/*"

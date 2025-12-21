@@ -135,7 +135,16 @@ app.use('/api/hospital-settings', hospitalSettingsRoutes);
 
 // Test endpoint to verify server is running
 app.get('/api/test', (req, res) => {
-    res.json({ message: 'Server is running with latest code!', timestamp: new Date().toISOString() });
+    res.json({
+        message: 'Server is running with latest code!',
+        timestamp: new Date().toISOString(),
+        env: {
+            NODE_ENV: process.env.NODE_ENV,
+            NETLIFY: !!process.env.NETLIFY,
+            CONTEXT: !!process.env.CONTEXT,
+            HAS_DB_URL: !!process.env.DATABASE_URL
+        }
+    });
 });
 
 // Health check

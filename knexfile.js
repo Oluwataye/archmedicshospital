@@ -39,7 +39,7 @@ const config = {
         },
     },
     production: {
-        client: 'postgresql',
+        client: 'pg',
         connection: process.env.DATABASE_URL || {
             host: process.env.DB_HOST,
             port: parseInt(process.env.DB_PORT || '5432'),

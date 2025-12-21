@@ -49,7 +49,7 @@ const config: { [key: string]: Knex.Config } = {
   },
 
   production: {
-    client: 'postgresql',
+    client: 'pg',
     connection: process.env.DATABASE_URL
       ? {
         connectionString: process.env.DATABASE_URL,

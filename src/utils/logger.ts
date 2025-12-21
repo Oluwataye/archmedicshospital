@@ -23,8 +23,13 @@ export const logger = winston.createLogger({
 });
 
 // Add file transports only in development and not on Netlify
-if (process.env.NODE_ENV !== 'production' && !process.env.NETLIFY) {
-  logger.add(new winston.transports.File({ filename: 'logs/error.log', level: 'error' }));
-  logger.add(new winston.transports.File({ filename: 'logs/combined.log' }));
+const isProductionFrontend = process.env.NODE_ENV === 'production' || !!process.env.NETLIFY;
+if (!isProductionFrontend) {
+  try {
+    logger.add(new winston.transports.File({ filename: 'logs/error.log', level: 'error' }));
+    logger.add(new winston.transports.File({ filename: 'logs/combined.log' }));
+  } catch (e) {
+    console.warn('Frontend logging to console only');
+  }
 }
 

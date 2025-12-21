@@ -14,10 +14,15 @@ const router = express.Router();
 // Configure multer for logo upload
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
+        const isProduction = process.env.NODE_ENV === 'production' || !!process.env.NETLIFY;
         const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'logos');
-        // Ensure directory exists
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
+        // Ensure directory exists (only if not in production or if it really needs to)
+        if (!fs.existsSync(uploadDir) && !isProduction) {
+            try {
+                fs.mkdirSync(uploadDir, { recursive: true });
+            } catch (e) {
+                console.error('Failed to create upload directory:', e);
+            }
         }
         cb(null, uploadDir);
     },

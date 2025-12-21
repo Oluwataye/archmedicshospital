@@ -35,10 +35,20 @@ const format = winston.format.combine(
 );
 
 // Create logs directory if it doesn't exist AND not in production/Netlify
-if (process.env.NODE_ENV !== 'production' && !process.env.NETLIFY) {
+const isProduction = process.env.NODE_ENV === 'production' || !!process.env.NETLIFY;
+
+if (!isProduction) {
     const logsDir = path.join(process.cwd(), 'logs');
     if (!fs.existsSync(logsDir)) {
-        fs.mkdirSync(logsDir, { recursive: true });
+        try {
+            // Only try to create if we are definitely not on Netlify
+            if (!process.env.NETLIFY) {
+                fs.mkdirSync(logsDir, { recursive: true });
+            }
+        } catch (e) {
+            // Ignore error in production
+            console.warn('Logging to console only - could not create logs directory');
+        }
     }
 }
 
@@ -47,7 +57,7 @@ const transports: winston.transport[] = [
 ];
 
 // Add file transports only in development
-if (process.env.NODE_ENV !== 'production') {
+if (!isProduction) {
     transports.push(
         new winston.transports.File({
             filename: 'logs/error.log',

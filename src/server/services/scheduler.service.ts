@@ -4,10 +4,16 @@ import db from '../db';
 
 const BACKUP_DIR = path.join(process.cwd(), 'backups');
 
+const isProduction = process.env.NODE_ENV === 'production' || !!process.env.NETLIFY;
+
 // Ensure backup directory exists (only in non-production/non-Netlify environments)
-if (process.env.NODE_ENV !== 'production' && !process.env.NETLIFY) {
+if (!isProduction && !process.env.NETLIFY) {
     if (!fs.existsSync(BACKUP_DIR)) {
-        fs.mkdirSync(BACKUP_DIR, { recursive: true });
+        try {
+            fs.mkdirSync(BACKUP_DIR, { recursive: true });
+        } catch (e) {
+            console.warn('Auto-backups disabled - could not create backup directory');
+        }
     }
 }
 

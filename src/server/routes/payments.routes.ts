@@ -136,7 +136,7 @@ router.post('/', auth, asyncHandler(async (req, res) => {
                 invoice_number: invoiceNumber,
                 reference_number: invoiceNumber, // Keep for backward compatibility
                 payment_status: 'completed',     // Was 'status'
-                voided: 0,
+                voided: false,
                 created_at: new Date(),
                 updated_at: new Date()
             });
@@ -196,12 +196,12 @@ router.get('/stats/overview', auth, asyncHandler(async (req, res) => {
         db('transactions')
             .where('transaction_date', '>=', todayStr)
             .where('transaction_date', '<', tomorrowStr)
-            .where('voided', 0)
+            .where('voided', false)
             .sum('total_amount as total')
             .first(),
         db('transactions')
             .where('transaction_date', '>=', monthStart)
-            .where('voided', 0)
+            .where('voided', false)
             .sum('total_amount as total')
             .first(),
         db('invoices')
@@ -236,7 +236,7 @@ router.get('/stats/daily-summary', auth, asyncHandler(async (req, res) => {
     const summary = await db('transactions')
         .where('transaction_date', '>=', targetDateStr)
         .where('transaction_date', '<', nextDayStr)
-        .where('voided', 0)
+        .where('voided', false)
         .select('payment_method')
         .sum('total_amount as total')
         .count('* as count')
@@ -245,7 +245,7 @@ router.get('/stats/daily-summary', auth, asyncHandler(async (req, res) => {
     const totalRevenue = await db('transactions')
         .where('transaction_date', '>=', targetDateStr)
         .where('transaction_date', '<', nextDayStr)
-        .where('voided', 0)
+        .where('voided', false)
         .sum('total_amount as total')
         .first();
 

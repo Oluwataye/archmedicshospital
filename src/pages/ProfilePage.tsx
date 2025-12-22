@@ -7,10 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ApiService } from '@/services/apiService';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { User, Building2, Mail, Shield, Phone } from 'lucide-react';
+import { User, Building2, Mail, Shield, Phone, Moon, Sun, Monitor } from 'lucide-react';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function ProfilePage() {
     const { user, updateProfile } = useAuth();
+    const { theme, setTheme } = useTheme();
     const [loading, setLoading] = useState(false);
     const [departments, setDepartments] = useState<any[]>([]);
     const [units, setUnits] = useState<any[]>([]);
@@ -130,6 +132,49 @@ export default function ProfilePage() {
                                     {user.role}
                                 </div>
                             </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="max-w-2xl">
+                    <CardHeader>
+                        <CardTitle>Appearance</CardTitle>
+                        <CardDescription>Customize how the application looks on your device</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="grid grid-cols-3 gap-4">
+                            <button
+                                onClick={() => setTheme('light')}
+                                className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-colors ${theme === 'light'
+                                    ? 'border-primary bg-primary/5'
+                                    : 'border-border hover:border-primary/50'
+                                    }`}
+                            >
+                                <Sun className="h-6 w-6" />
+                                <span className="text-sm font-medium">Light</span>
+                            </button>
+
+                            <button
+                                onClick={() => setTheme('dark')}
+                                className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-colors ${theme === 'dark'
+                                    ? 'border-primary bg-primary/5'
+                                    : 'border-border hover:border-primary/50'
+                                    }`}
+                            >
+                                <Moon className="h-6 w-6" />
+                                <span className="text-sm font-medium">Dark</span>
+                            </button>
+
+                            <button
+                                onClick={() => setTheme('system')}
+                                className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-colors ${theme === 'system'
+                                    ? 'border-primary bg-primary/5'
+                                    : 'border-border hover:border-primary/50'
+                                    }`}
+                            >
+                                <Monitor className="h-6 w-6" />
+                                <span className="text-sm font-medium">System</span>
+                            </button>
                         </div>
                     </CardContent>
                 </Card>
@@ -263,6 +308,52 @@ export default function ProfilePage() {
                                     Please select a department first
                                 </p>
                             )}
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Appearance</CardTitle>
+                        <CardDescription>Customize how the application looks on your device</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="grid grid-cols-3 gap-4">
+                            <button
+                                type="button"
+                                onClick={() => setTheme('light')}
+                                className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-colors ${theme === 'light'
+                                    ? 'border-primary bg-primary/5'
+                                    : 'border-border hover:border-primary/50'
+                                    }`}
+                            >
+                                <Sun className="h-6 w-6" />
+                                <span className="text-sm font-medium">Light</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => setTheme('dark')}
+                                className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-colors ${theme === 'dark'
+                                    ? 'border-primary bg-primary/5'
+                                    : 'border-border hover:border-primary/50'
+                                    }`}
+                            >
+                                <Moon className="h-6 w-6" />
+                                <span className="text-sm font-medium">Dark</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => setTheme('system')}
+                                className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-colors ${theme === 'system'
+                                    ? 'border-primary bg-primary/5'
+                                    : 'border-border hover:border-primary/50'
+                                    }`}
+                            >
+                                <Monitor className="h-6 w-6" />
+                                <span className="text-sm font-medium">System</span>
+                            </button>
                         </div>
                     </CardContent>
                 </Card>

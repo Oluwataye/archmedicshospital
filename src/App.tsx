@@ -568,7 +568,11 @@ function AppRoutes() {
         } />
         <Route path="settings" element={
           <ProtectedRoute>
-            <Navigate to="/admin/settings" replace />
+            {user?.role === 'admin' ? (
+              <Navigate to="/admin/settings" replace />
+            ) : (
+              <SettingsPage />
+            )}
           </ProtectedRoute>
         } />
 

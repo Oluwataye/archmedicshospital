@@ -5,7 +5,7 @@ export async function up(knex: Knex): Promise<void> {
     const hasDrugInteractions = await knex.schema.hasTable("drug_interactions");
     if (!hasDrugInteractions) {
         await knex.schema.createTable("drug_interactions", (table) => {
-            table.uuid("id").primary().defaultTo(knex.raw("(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))"));
+            table.uuid("id").primary().defaultTo(knex.raw("gen_random_uuid()"));
             table.string("drug_a", 200).notNullable();
             table.string("drug_b", 200).notNullable();
             table.string("severity", 20).notNullable(); // Critical, Major, Moderate, Minor
@@ -25,7 +25,7 @@ export async function up(knex: Knex): Promise<void> {
     const hasContraindications = await knex.schema.hasTable("drug_contraindications");
     if (!hasContraindications) {
         await knex.schema.createTable("drug_contraindications", (table) => {
-            table.uuid("id").primary().defaultTo(knex.raw("(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))"));
+            table.uuid("id").primary().defaultTo(knex.raw("gen_random_uuid()"));
             table.string("drug_name", 200).notNullable();
             table.string("condition", 200).notNullable();
             table.string("severity", 20).notNullable(); // Absolute, Relative
@@ -42,7 +42,7 @@ export async function up(knex: Knex): Promise<void> {
     const hasAllergyInteractions = await knex.schema.hasTable("allergy_interactions");
     if (!hasAllergyInteractions) {
         await knex.schema.createTable("allergy_interactions", (table) => {
-            table.uuid("id").primary().defaultTo(knex.raw("(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))"));
+            table.uuid("id").primary().defaultTo(knex.raw("gen_random_uuid()"));
             table.string("allergen", 200).notNullable();
             table.string("drug_name", 200).notNullable();
             table.string("cross_sensitivity", 20).notNullable(); // High, Moderate, Low
@@ -59,7 +59,7 @@ export async function up(knex: Knex): Promise<void> {
     const hasInteractionChecks = await knex.schema.hasTable("interaction_checks");
     if (!hasInteractionChecks) {
         await knex.schema.createTable("interaction_checks", (table) => {
-            table.uuid("id").primary().defaultTo(knex.raw("(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))"));
+            table.uuid("id").primary().defaultTo(knex.raw("gen_random_uuid()"));
             table.uuid("patient_id").notNullable().references("id").inTable("patients");
             table.uuid("prescription_id").references("id").inTable("prescriptions");
             table.uuid("checked_by").notNullable().references("id").inTable("users");
@@ -83,3 +83,5 @@ export async function down(knex: Knex): Promise<void> {
     await knex.schema.dropTableIfExists("drug_contraindications");
     await knex.schema.dropTableIfExists("drug_interactions");
 }
+
+

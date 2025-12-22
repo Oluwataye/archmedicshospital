@@ -9,3 +9,4 @@ export async function down(knex: any): Promise<void> {
         .where('role', 'nurse')
         .update({ email: 'nurse.williams@archmedics.com' });
 }
+

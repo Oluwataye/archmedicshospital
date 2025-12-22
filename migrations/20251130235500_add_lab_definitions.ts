@@ -4,7 +4,7 @@ export async function up(knex: Knex): Promise<void> {
     const hasTable = await knex.schema.hasTable("lab_test_definitions");
     if (!hasTable) {
         await knex.schema.createTable("lab_test_definitions", (table) => {
-            table.uuid("id").primary().defaultTo(knex.raw("(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))"));
+            table.uuid("id").primary().defaultTo(knex.raw("gen_random_uuid()"));
             table.string("code", 50).unique().notNullable();
             table.string("name", 100).notNullable();
             table.string("category", 50);
@@ -27,3 +27,5 @@ export async function up(knex: Knex): Promise<void> {
 export async function down(knex: Knex): Promise<void> {
     await knex.schema.dropTableIfExists("lab_test_definitions");
 }
+
+

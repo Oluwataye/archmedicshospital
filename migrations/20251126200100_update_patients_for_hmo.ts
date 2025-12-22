@@ -38,3 +38,4 @@ export async function down(knex: Knex): Promise<void> {
         table.dropColumn("relationship_to_principal");
     });
 }
+

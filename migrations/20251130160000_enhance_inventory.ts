@@ -5,7 +5,7 @@ export async function up(knex: Knex): Promise<void> {
     const hasSuppliers = await knex.schema.hasTable("suppliers");
     if (!hasSuppliers) {
         await knex.schema.createTable("suppliers", (table) => {
-            table.uuid("id").primary().defaultTo(knex.raw("(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))"));
+            table.uuid("id").primary().defaultTo(knex.raw("gen_random_uuid()"));
             table.string("name", 200).notNullable();
             table.string("contact_person", 100);
             table.string("email", 255);
@@ -21,7 +21,7 @@ export async function up(knex: Knex): Promise<void> {
     const hasInventoryItems = await knex.schema.hasTable("inventory_items");
     if (!hasInventoryItems) {
         await knex.schema.createTable("inventory_items", (table) => {
-            table.uuid("id").primary().defaultTo(knex.raw("(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))"));
+            table.uuid("id").primary().defaultTo(knex.raw("gen_random_uuid()"));
             table.string("name", 200).notNullable();
             table.string("generic_name", 200);
             table.string("sku", 50).unique();
@@ -47,7 +47,7 @@ export async function up(knex: Knex): Promise<void> {
     const hasInventoryBatches = await knex.schema.hasTable("inventory_batches");
     if (!hasInventoryBatches) {
         await knex.schema.createTable("inventory_batches", (table) => {
-            table.uuid("id").primary().defaultTo(knex.raw("(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))"));
+            table.uuid("id").primary().defaultTo(knex.raw("gen_random_uuid()"));
             table.uuid("item_id").notNullable().references("id").inTable("inventory_items").onDelete("CASCADE");
             table.string("batch_number", 50).notNullable();
             table.integer("quantity").notNullable();
@@ -66,7 +66,7 @@ export async function up(knex: Knex): Promise<void> {
     const hasStockMovements = await knex.schema.hasTable("stock_movements");
     if (!hasStockMovements) {
         await knex.schema.createTable("stock_movements", (table) => {
-            table.uuid("id").primary().defaultTo(knex.raw("(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))"));
+            table.uuid("id").primary().defaultTo(knex.raw("gen_random_uuid()"));
             table.uuid("item_id").notNullable().references("id").inTable("inventory_items");
             table.uuid("batch_id").references("id").inTable("inventory_batches");
             table.string("type", 20).notNullable(); // IN, OUT, ADJUSTMENT, RETURN, EXPIRED
@@ -90,3 +90,5 @@ export async function down(knex: Knex): Promise<void> {
     await knex.schema.dropTableIfExists("inventory_items");
     await knex.schema.dropTableIfExists("suppliers");
 }
+
+

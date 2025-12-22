@@ -4,7 +4,7 @@ export async function up(knex: Knex): Promise<void> {
   const hasUsers = await knex.schema.hasTable("users");
   if (!hasUsers) {
     await knex.schema.createTable("users", (table) => {
-      table.uuid("id").primary().defaultTo(knex.raw("(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))"));
+      table.uuid("id").primary().defaultTo(knex.raw("gen_random_uuid()"));
       table.string("username", 50).unique().notNullable();
       table.string("email", 255).unique().notNullable();
       table.string("password_hash", 255).notNullable();
@@ -25,7 +25,7 @@ export async function up(knex: Knex): Promise<void> {
   const hasPatients = await knex.schema.hasTable("patients");
   if (!hasPatients) {
     await knex.schema.createTable("patients", (table) => {
-      table.uuid("id").primary().defaultTo(knex.raw("(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))"));
+      table.uuid("id").primary().defaultTo(knex.raw("gen_random_uuid()"));
       table.string("mrn", 20).unique().notNullable();
       table.string("first_name", 100).notNullable();
       table.string("last_name", 100).notNullable();
@@ -52,7 +52,7 @@ export async function up(knex: Knex): Promise<void> {
   const hasAppointments = await knex.schema.hasTable("appointments");
   if (!hasAppointments) {
     await knex.schema.createTable("appointments", (table) => {
-      table.uuid("id").primary().defaultTo(knex.raw("(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))"));
+      table.uuid("id").primary().defaultTo(knex.raw("gen_random_uuid()"));
       table.uuid("patient_id").notNullable().references("id").inTable("patients");
       table.uuid("doctor_id").notNullable().references("id").inTable("users");
       table.date("appointment_date").notNullable();
@@ -73,7 +73,7 @@ export async function up(knex: Knex): Promise<void> {
   const hasMedicalRecords = await knex.schema.hasTable("medical_records");
   if (!hasMedicalRecords) {
     await knex.schema.createTable("medical_records", (table) => {
-      table.uuid("id").primary().defaultTo(knex.raw("(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))"));
+      table.uuid("id").primary().defaultTo(knex.raw("gen_random_uuid()"));
       table.uuid("patient_id").notNullable().references("id").inTable("patients");
       table.uuid("provider_id").notNullable().references("id").inTable("users");
       table.string("record_type", 20).notNullable();
@@ -90,7 +90,7 @@ export async function up(knex: Knex): Promise<void> {
   const hasVitalSigns = await knex.schema.hasTable("vital_signs");
   if (!hasVitalSigns) {
     await knex.schema.createTable("vital_signs", (table) => {
-      table.uuid("id").primary().defaultTo(knex.raw("(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))"));
+      table.uuid("id").primary().defaultTo(knex.raw("gen_random_uuid()"));
       table.uuid("patient_id").notNullable().references("id").inTable("patients");
       table.uuid("recorded_by").notNullable().references("id").inTable("users");
       table.timestamp("recorded_at").notNullable();
@@ -111,7 +111,7 @@ export async function up(knex: Knex): Promise<void> {
   const hasLabResults = await knex.schema.hasTable("lab_results");
   if (!hasLabResults) {
     await knex.schema.createTable("lab_results", (table) => {
-      table.uuid("id").primary().defaultTo(knex.raw("(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))"));
+      table.uuid("id").primary().defaultTo(knex.raw("gen_random_uuid()"));
       table.uuid("patient_id").notNullable().references("id").inTable("patients");
       table.uuid("ordered_by").notNullable().references("id").inTable("users");
       table.uuid("performed_by").references("id").inTable("users");
@@ -133,7 +133,7 @@ export async function up(knex: Knex): Promise<void> {
   const hasPrescriptions = await knex.schema.hasTable("prescriptions");
   if (!hasPrescriptions) {
     await knex.schema.createTable("prescriptions", (table) => {
-      table.uuid("id").primary().defaultTo(knex.raw("(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))"));
+      table.uuid("id").primary().defaultTo(knex.raw("gen_random_uuid()"));
       table.uuid("patient_id").notNullable().references("id").inTable("patients");
       table.uuid("prescribed_by").notNullable().references("id").inTable("users");
       table.date("prescription_date").notNullable();
@@ -148,7 +148,7 @@ export async function up(knex: Knex): Promise<void> {
   const hasAuditLogs = await knex.schema.hasTable("audit_logs");
   if (!hasAuditLogs) {
     await knex.schema.createTable("audit_logs", (table) => {
-      table.uuid("id").primary().defaultTo(knex.raw("(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))"));
+      table.uuid("id").primary().defaultTo(knex.raw("gen_random_uuid()"));
       table.uuid("user_id").references("id").inTable("users");
       table.string("action", 100).notNullable();
       table.string("resource_type", 50).notNullable();
@@ -182,3 +182,5 @@ export async function down(knex: Knex): Promise<void> {
   await knex.schema.dropTableIfExists("patients");
   await knex.schema.dropTableIfExists("users");
 }
+
+

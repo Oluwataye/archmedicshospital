@@ -5,7 +5,7 @@ export async function up(knex: Knex): Promise<void> {
     const hasWards = await knex.schema.hasTable("wards");
     if (!hasWards) {
         await knex.schema.createTable("wards", (table) => {
-            table.uuid("id").primary().defaultTo(knex.raw("(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))"));
+            table.uuid("id").primary().defaultTo(knex.raw("gen_random_uuid()"));
             table.string("name", 100).unique().notNullable();
             table.string("type", 50).notNullable(); // General, ICU, Maternity, Pediatric, Surgical
             table.integer("capacity").notNullable();
@@ -21,7 +21,7 @@ export async function up(knex: Knex): Promise<void> {
     const hasBeds = await knex.schema.hasTable("beds");
     if (!hasBeds) {
         await knex.schema.createTable("beds", (table) => {
-            table.uuid("id").primary().defaultTo(knex.raw("(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))"));
+            table.uuid("id").primary().defaultTo(knex.raw("gen_random_uuid()"));
             table.uuid("ward_id").notNullable().references("id").inTable("wards").onDelete("CASCADE");
             table.string("bed_number", 20).notNullable();
             table.string("type", 50).defaultTo("Standard"); // Standard, ICU, Incubator, VIP
@@ -39,7 +39,7 @@ export async function up(knex: Knex): Promise<void> {
     const hasAdmissions = await knex.schema.hasTable("admissions");
     if (!hasAdmissions) {
         await knex.schema.createTable("admissions", (table) => {
-            table.uuid("id").primary().defaultTo(knex.raw("(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))"));
+            table.uuid("id").primary().defaultTo(knex.raw("gen_random_uuid()"));
             table.uuid("patient_id").notNullable().references("id").inTable("patients");
             table.uuid("ward_id").notNullable().references("id").inTable("wards");
             table.uuid("bed_id").notNullable().references("id").inTable("beds");
@@ -81,4 +81,6 @@ export async function down(knex: Knex): Promise<void> {
     await knex.schema.dropTableIfExists("beds");
     await knex.schema.dropTableIfExists("wards");
 }
+
+
 

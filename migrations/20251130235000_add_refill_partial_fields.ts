@@ -15,7 +15,7 @@ export async function up(knex: Knex): Promise<void> {
     const hasFillsTable = await knex.schema.hasTable("prescription_fills");
     if (!hasFillsTable) {
         await knex.schema.createTable("prescription_fills", (table) => {
-            table.uuid("id").primary().defaultTo(knex.raw("(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))"));
+            table.uuid("id").primary().defaultTo(knex.raw("gen_random_uuid()"));
             table.uuid("prescription_id").notNullable().references("id").inTable("prescriptions").onDelete("CASCADE");
             table.timestamp("dispensed_at").defaultTo(knex.fn.now());
             table.uuid("dispensed_by").references("id").inTable("users");
@@ -36,3 +36,5 @@ export async function down(knex: Knex): Promise<void> {
         table.dropColumn("refills_authorized");
     });
 }
+
+

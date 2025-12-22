@@ -5,7 +5,7 @@ export async function up(knex: Knex): Promise<void> {
   const hasHmoProviders = await knex.schema.hasTable("hmo_providers");
   if (!hasHmoProviders) {
     await knex.schema.createTable("hmo_providers", (table) => {
-      table.uuid("id").primary().defaultTo(knex.raw("(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))"));
+      table.uuid("id").primary().defaultTo(knex.raw("gen_random_uuid()"));
       table.string("name", 200).notNullable();
       table.string("code", 50).unique().notNullable();
       table.string("nhia_accreditation_number", 100);
@@ -23,7 +23,7 @@ export async function up(knex: Knex): Promise<void> {
   const hasHmoServicePackages = await knex.schema.hasTable("hmo_service_packages");
   if (!hasHmoServicePackages) {
     await knex.schema.createTable("hmo_service_packages", (table) => {
-      table.uuid("id").primary().defaultTo(knex.raw("(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))"));
+      table.uuid("id").primary().defaultTo(knex.raw("gen_random_uuid()"));
       table.uuid("hmo_provider_id").notNullable().references("id").inTable("hmo_providers").onDelete("CASCADE");
       table.string("package_name", 200).notNullable();
       table.string("package_code", 50).notNullable();
@@ -41,7 +41,7 @@ export async function up(knex: Knex): Promise<void> {
   const hasNhisServiceCodes = await knex.schema.hasTable("nhis_service_codes");
   if (!hasNhisServiceCodes) {
     await knex.schema.createTable("nhis_service_codes", (table) => {
-      table.uuid("id").primary().defaultTo(knex.raw("(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))"));
+      table.uuid("id").primary().defaultTo(knex.raw("gen_random_uuid()"));
       table.string("code", 50).unique().notNullable();
       table.string("description", 500).notNullable();
       table.string("category", 100); // consultation, procedure, diagnostic, etc.
@@ -56,7 +56,7 @@ export async function up(knex: Knex): Promise<void> {
   const hasHmoTariffs = await knex.schema.hasTable("hmo_tariffs");
   if (!hasHmoTariffs) {
     await knex.schema.createTable("hmo_tariffs", (table) => {
-      table.uuid("id").primary().defaultTo(knex.raw("(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))"));
+      table.uuid("id").primary().defaultTo(knex.raw("gen_random_uuid()"));
       table.uuid("hmo_provider_id").notNullable().references("id").inTable("hmo_providers").onDelete("CASCADE");
       table.uuid("service_code_id").notNullable().references("id").inTable("nhis_service_codes").onDelete("CASCADE");
       table.decimal("tariff_amount", 10, 2).notNullable();
@@ -73,7 +73,7 @@ export async function up(knex: Knex): Promise<void> {
   const hasHmoClaims = await knex.schema.hasTable("hmo_claims");
   if (!hasHmoClaims) {
     await knex.schema.createTable("hmo_claims", (table) => {
-      table.uuid("id").primary().defaultTo(knex.raw("(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))"));
+      table.uuid("id").primary().defaultTo(knex.raw("gen_random_uuid()"));
       table.string("claim_number", 50).unique().notNullable();
       table.uuid("patient_id").notNullable().references("id").inTable("patients").onDelete("RESTRICT");
       table.uuid("hmo_provider_id").notNullable().references("id").inTable("hmo_providers").onDelete("RESTRICT");
@@ -97,7 +97,7 @@ export async function up(knex: Knex): Promise<void> {
   const hasHmoClaimItems = await knex.schema.hasTable("hmo_claim_items");
   if (!hasHmoClaimItems) {
     await knex.schema.createTable("hmo_claim_items", (table) => {
-      table.uuid("id").primary().defaultTo(knex.raw("(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))"));
+      table.uuid("id").primary().defaultTo(knex.raw("gen_random_uuid()"));
       table.uuid("claim_id").notNullable().references("id").inTable("hmo_claims").onDelete("CASCADE");
       table.uuid("service_code_id").notNullable().references("id").inTable("nhis_service_codes").onDelete("RESTRICT");
       table.integer("quantity").defaultTo(1);
@@ -113,7 +113,7 @@ export async function up(knex: Knex): Promise<void> {
   const hasHmoPreauthorizations = await knex.schema.hasTable("hmo_preauthorizations");
   if (!hasHmoPreauthorizations) {
     await knex.schema.createTable("hmo_preauthorizations", (table) => {
-      table.uuid("id").primary().defaultTo(knex.raw("(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))"));
+      table.uuid("id").primary().defaultTo(knex.raw("gen_random_uuid()"));
       table.string("authorization_code", 50).unique().notNullable();
       table.uuid("patient_id").notNullable().references("id").inTable("patients").onDelete("RESTRICT");
       table.uuid("hmo_provider_id").notNullable().references("id").inTable("hmo_providers").onDelete("RESTRICT");
@@ -135,7 +135,7 @@ export async function up(knex: Knex): Promise<void> {
   const hasReferrals = await knex.schema.hasTable("referrals");
   if (!hasReferrals) {
     await knex.schema.createTable("referrals", (table) => {
-      table.uuid("id").primary().defaultTo(knex.raw("(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))"));
+      table.uuid("id").primary().defaultTo(knex.raw("gen_random_uuid()"));
       table.string("referral_code", 50).unique().notNullable();
       table.uuid("patient_id").notNullable().references("id").inTable("patients").onDelete("RESTRICT");
       table.uuid("referring_provider_id").notNullable().references("id").inTable("users");
@@ -185,3 +185,5 @@ export async function down(knex: Knex): Promise<void> {
   await knex.schema.dropTableIfExists("hmo_service_packages");
   await knex.schema.dropTableIfExists("hmo_providers");
 }
+
+

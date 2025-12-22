@@ -7,7 +7,7 @@ export async function up(knex: Knex): Promise<void> {
     const hasEquipmentTable = await knex.schema.hasTable("lab_equipment");
     if (!hasEquipmentTable) {
         await knex.schema.createTable("lab_equipment", (table) => {
-            table.uuid("id").primary().defaultTo(knex.raw("(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))"));
+            table.uuid("id").primary().defaultTo(knex.raw("gen_random_uuid()"));
             table.string("name", 100).notNullable();
             table.string("model", 100);
             table.string("manufacturer", 100);
@@ -35,7 +35,7 @@ export async function up(knex: Knex): Promise<void> {
     const hasMaintenanceTable = await knex.schema.hasTable("lab_maintenance_logs");
     if (!hasMaintenanceTable) {
         await knex.schema.createTable("lab_maintenance_logs", (table) => {
-            table.uuid("id").primary().defaultTo(knex.raw("(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))"));
+            table.uuid("id").primary().defaultTo(knex.raw("gen_random_uuid()"));
             table.uuid("equipment_id").notNullable();
             table.date("scheduled_date").notNullable();
             table.date("completed_date");
@@ -60,7 +60,7 @@ export async function up(knex: Knex): Promise<void> {
     const hasQCTable = await knex.schema.hasTable("lab_quality_control");
     if (!hasQCTable) {
         await knex.schema.createTable("lab_quality_control", (table) => {
-            table.uuid("id").primary().defaultTo(knex.raw("(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))))"));
+            table.uuid("id").primary().defaultTo(knex.raw("gen_random_uuid()"));
             table.uuid("equipment_id").notNullable();
             table.date("test_date").notNullable();
             table.string("control_material", 100);
@@ -90,3 +90,5 @@ export async function down(knex: Knex): Promise<void> {
     await knex.schema.dropTableIfExists("lab_maintenance_logs");
     await knex.schema.dropTableIfExists("lab_equipment");
 }
+
+

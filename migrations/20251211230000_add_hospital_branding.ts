@@ -54,3 +54,4 @@ export async function down(knex: Knex): Promise<void> {
     await knex.schema.dropTableIfExists('patient_id_sequence');
     await knex.schema.dropTableIfExists('hospital_settings');
 }
+

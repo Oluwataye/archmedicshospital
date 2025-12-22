@@ -329,6 +329,44 @@ const DashboardStats: React.FC<{ userRole: string }> = ({ userRole }) => {
                         accentClass: "card-accent-purple"
                     },
                 ];
+            case 'admin':
+                return [
+                    {
+                        title: "Total Revenue",
+                        value: "₦0",
+                        icon: CreditCard,
+                        trend: "+0%",
+                        trendUp: true,
+                        description: "this month",
+                        onClick: () => navigate('/admin/reports?tab=financial'),
+                        accentClass: "card-accent-green"
+                    },
+                    {
+                        title: "Active Staff",
+                        value: "0",
+                        icon: Users,
+                        description: "total users",
+                        onClick: () => navigate('/admin/users'),
+                        accentClass: "card-accent-purple"
+                    },
+                    {
+                        title: "Total Patients",
+                        value: "0",
+                        icon: Activity,
+                        description: "registered patients",
+                        onClick: () => navigate('/admin/reports?tab=patients'),
+                        accentClass: "card-accent-blue"
+                    },
+                    {
+                        title: "System Health",
+                        value: "99.9%",
+                        icon: Activity,
+                        trendUp: true,
+                        description: "uptime",
+                        onClick: () => navigate('/admin/settings'),
+                        accentClass: "card-accent-orange"
+                    },
+                ];
             default:
                 return [
                     { title: "Total Patients", value: "0", icon: Users },

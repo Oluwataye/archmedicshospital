@@ -38,9 +38,9 @@ router.get('/', auth, asyncHandler(async (req, res) => {
 
     if (status && status !== 'all') {
         if (status === 'voided') {
-            query = query.where('transactions.voided', 1);
+            query = query.where('transactions.voided', true);
         } else {
-            query = query.where('transactions.payment_status', status).where('transactions.voided', 0);
+            query = query.where('transactions.payment_status', status).where('transactions.voided', false);
         }
     }
 
@@ -110,7 +110,7 @@ router.post('/void', auth, asyncHandler(async (req, res) => {
     await db('transactions')
         .where('id', transactionId)
         .update({
-            voided: 1,
+            voided: true,
             voided_by: userId,
             voided_at: new Date().toISOString(),
             void_reason: reason,

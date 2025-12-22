@@ -21,15 +21,15 @@ router.get('/daily-sales', auth, async (req, res) => {
                 'patients.first_name',
                 'patients.last_name'
             )
-            .whereRaw('substr(transactions.transaction_date, 1, 10) = ?', [targetDate])
-            .where('transactions.voided', 0)
+            .whereRaw('transactions.transaction_date::date = ?', [targetDate])
+            .where('transactions.voided', false)
             .orderBy('transactions.transaction_date', 'desc');
 
         console.log(`Found ${transactions.length} transactions for date ${targetDate}`);
 
         const summaryResult: any = await db('transactions')
-            .whereRaw('substr(transaction_date, 1, 10) = ?', [targetDate])
-            .where('voided', 0)
+            .whereRaw('transaction_date::date = ?', [targetDate])
+            .where('voided', false)
             .select(
                 db.raw('COUNT(id) as total_transactions'),
                 db.raw('SUM(total_amount) as total_revenue'),
@@ -95,7 +95,7 @@ router.get('/cashier-reconciliation', auth, async (req, res) => {
                 db.raw("SUM(CASE WHEN transactions.payment_method = 'Transfer' THEN transactions.total_amount ELSE 0 END) as transfer_total"),
                 db.raw("SUM(CASE WHEN transactions.payment_method = 'HMO' THEN transactions.total_amount ELSE 0 END) as hmo_total")
             )
-            .where('transactions.voided', 0)
+            .where('transactions.voided', false)
             .groupBy('users.id', 'users.first_name', 'users.last_name');
 
         if (startDate && endDate) {
@@ -135,7 +135,7 @@ router.get('/revenue-by-service', auth, async (req, res) => {
                 db.raw('SUM(transaction_items.quantity) as quantity_sold'),
                 db.raw('SUM(transaction_items.total_price) as total_revenue')
             )
-            .where('transactions.voided', 0)
+            .where('transactions.voided', false)
             .groupBy('services.id', 'services.name', 'services.category')
             .orderBy('total_revenue', 'desc');
 
@@ -168,7 +168,7 @@ router.get('/revenue-by-department', auth, async (req, res) => {
                 db.raw('COUNT(DISTINCT transactions.id) as transaction_count'),
                 db.raw('SUM(transaction_items.total_price) as total_revenue')
             )
-            .where('transactions.voided', 0)
+            .where('transactions.voided', false)
             .whereNotNull('services.department')
             .groupBy('services.department')
             .orderBy('total_revenue', 'desc');
@@ -200,9 +200,9 @@ router.get('/refunds-voids', auth, async (req, res) => {
                 'transactions.voided_at as date',
                 'users.first_name',
                 'users.last_name',
-                db.raw('"Void" as type')
+                db.raw("'Void' as type")
             )
-            .where('transactions.voided', 1);
+            .where('transactions.voided', true);
 
         // Refunds
         let refundsQuery = db('refunds')
@@ -215,7 +215,7 @@ router.get('/refunds-voids', auth, async (req, res) => {
                 'refunds.approved_at as date',
                 'users.first_name',
                 'users.last_name',
-                db.raw('"Refund" as type')
+                db.raw("'Refund' as type")
             )
             .where('refunds.status', 'approved');
 

@@ -89,7 +89,7 @@ router.get('/performance', auth, async (req, res) => {
                 db.raw('SUM(CASE WHEN transactions.payment_method = "Card" THEN transactions.total_amount ELSE 0 END) as card_total'),
                 db.raw('SUM(CASE WHEN transactions.payment_method = "Transfer" THEN transactions.total_amount ELSE 0 END) as transfer_total')
             )
-            .where('transactions.voided', 0)
+            .where('transactions.voided', false)
             .groupBy('users.id', 'users.name');
 
         if (startDate && endDate) {

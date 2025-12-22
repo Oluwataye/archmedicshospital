@@ -16,23 +16,23 @@ router.get('/dashboard', auth, async (req, res) => {
             .where('transaction_date', '>=', today)
             .where('transaction_date', '<', new Date(new Date(today).setDate(new Date(today).getDate() + 1)).toISOString().split('T')[0])
             .where('payment_status', 'completed')
-            .where('voided', 0)
+            .where('voided', false)
             .sum('total_amount as total')
             .first();
 
         // This Week's Revenue
         const weekRevenue = await db('transactions')
-            .whereRaw('date(transaction_date) >= ?', [startOfWeek])
+            .whereRaw('transaction_date::date >= ?', [startOfWeek])
             .where('payment_status', 'completed')
-            .where('voided', 0)
+            .where('voided', false)
             .sum('total_amount as total')
             .first();
 
         // This Month's Revenue
         const monthRevenue = await db('transactions')
-            .whereRaw('date(transaction_date) >= ?', [startOfMonth])
+            .whereRaw('transaction_date::date >= ?', [startOfMonth])
             .where('payment_status', 'completed')
-            .where('voided', 0)
+            .where('voided', false)
             .sum('total_amount as total')
             .first();
 
@@ -40,7 +40,7 @@ router.get('/dashboard', auth, async (req, res) => {
         const todayTxCount = await db('transactions')
             .where('transaction_date', '>=', today)
             .where('transaction_date', '<', new Date(new Date(today).setDate(new Date(today).getDate() + 1)).toISOString().split('T')[0])
-            .where('voided', 0)
+            .where('voided', false)
             .count('id as count')
             .first();
 
@@ -52,7 +52,7 @@ router.get('/dashboard', auth, async (req, res) => {
 
         // Active Cashiers Today
         const activeCashiers = await db('transactions')
-            .whereRaw('date(transaction_date) = ?', [today])
+            .whereRaw('transaction_date::date = ?', [today])
             .distinct('cashier_id')
             .count('cashier_id as count')
             .first();
@@ -95,7 +95,7 @@ router.get('/revenue-chart', auth, async (req, res) => {
         const revenueData = await db('transactions')
             .select(db.raw(`${groupBy} as date`), db.raw('SUM(total_amount) as revenue'))
             .where('payment_status', 'completed')
-            .where('voided', 0)
+            .where('voided', false)
             .groupByRaw(groupBy)
             .orderBy('date', 'asc')
             .limit(limit);
@@ -117,7 +117,7 @@ router.get('/payment-methods', auth, async (req, res) => {
             .count('id as count')
             .sum('total_amount as total')
             .where('payment_status', 'completed')
-            .where('voided', 0)
+            .where('voided', false)
             .groupBy('payment_method');
 
         if (startDate && endDate) {
@@ -140,7 +140,7 @@ router.get('/top-services', auth, async (req, res) => {
             .select('transaction_items.service_name')
             .sum('transaction_items.quantity as quantity')
             .sum('transaction_items.total_price as revenue')
-            .where('transactions.voided', 0)
+            .where('transactions.voided', false)
             .groupBy('transaction_items.service_name')
             .orderBy('revenue', 'desc')
             .limit(5);
@@ -166,7 +166,7 @@ router.get('/cashier-performance', auth, async (req, res) => {
             )
             .where('transactions.transaction_date', '>=', today)
             .where('transactions.transaction_date', '<', new Date(new Date(today).setDate(new Date(today).getDate() + 1)).toISOString().split('T')[0])
-            .where('transactions.voided', 0)
+            .where('transactions.voided', false)
             .groupBy('users.id', 'users.name')
             .orderBy('total_revenue', 'desc');
 

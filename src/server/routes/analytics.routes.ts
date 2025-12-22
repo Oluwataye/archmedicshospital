@@ -45,6 +45,7 @@ router.get('/disease-prevalence', auth, async (req, res) => {
                     to_char(medical_records.record_date, 'YYYY "Q"') || to_char(medical_records.record_date, 'Q') as period
                 `)
             )
+            .where('medical_records.content', 'like', '{%')
             .whereRaw("(medical_records.content::jsonb->>'diagnosis') IS NOT NULL")
             .whereRaw("(medical_records.content::jsonb->>'diagnosis') != ''");
 
@@ -72,7 +73,14 @@ router.get('/disease-prevalence', auth, async (req, res) => {
         }
 
         if (ageGroup && ageGroup !== 'all') {
-            query = query.having(db.raw('age_group LIKE ?', [`%${ageGroup}%`]));
+            query = query.whereRaw(`
+                CASE
+                    WHEN EXTRACT(YEAR FROM AGE(patients.date_of_birth)) < 18 THEN 'Child (0-17)'
+                    WHEN EXTRACT(YEAR FROM AGE(patients.date_of_birth)) BETWEEN 18 AND 35 THEN 'Young Adult (18-35)'
+                    WHEN EXTRACT(YEAR FROM AGE(patients.date_of_birth)) BETWEEN 36 AND 65 THEN 'Adult (36-65)'
+                    ELSE 'Senior (65+)'
+                END LIKE ?
+            `, [`%${ageGroup}%`]);
         }
 
         if (gender && gender !== 'all') {
@@ -100,6 +108,7 @@ router.get('/disease-prevalence', auth, async (req, res) => {
 
         const historicalQuery = await db('medical_records')
             .select(db.raw(`(content::jsonb->>'diagnosis') as disease, COUNT(*) as cases`))
+            .where('content', 'like', '{%')
             .whereRaw("(content::jsonb->>'diagnosis') IS NOT NULL")
             .where('record_date', '<', threeMonthsAgo.toISOString())
             .groupBy(db.raw(`(content::jsonb->>'diagnosis')`));
@@ -179,6 +188,7 @@ router.get('/treatment-outcomes', auth, async (req, res) => {
                     medical_records.id as record_id
                 `)
             )
+            .where('medical_records.content', 'like', '{%')
             .whereRaw("(medical_records.content::jsonb->>'treatment') IS NOT NULL");
 
         // Apply time range filter

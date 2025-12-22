@@ -180,37 +180,37 @@ router.put('/:id', auth, asyncHandler(async (req, res) => {
 router.get('/stats/overview', auth, asyncHandler(async (req, res) => {
     const today = new Date();
     const todayStr = today.toISOString().split('T')[0];
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
     const monthStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
 
-    // Use transactions table for accurate reporting if available, or fallback to payments
-    // Given we just created transactions table, we should prioritize it for revenue
-    // But for now, let's look at payments table but fix date query for SQLite/String dates
-
-    // Fix: SQL DATE() might not work if stored as full ISO string in some SQLite versions without helper
-    // Better to use LIKE 'YYYY-MM-DD%'
-
+    // Use transactions table for accurate reporting if available
     const [
         todayRevenue,
         monthRevenue,
         pendingPayments,
         totalTransactions
     ] = await Promise.all([
-        db('transactions') // Changed from payments to transactions
-            .where('transaction_date', 'like', `${todayStr}%`)
+        db('transactions')
+            .where('transaction_date', '>=', todayStr)
+            .where('transaction_date', '<', tomorrowStr)
             .where('voided', 0)
-            .sum('total_amount as total') // total_amount in transactions
+            .sum('total_amount as total')
             .first(),
         db('transactions')
             .where('transaction_date', '>=', monthStart)
             .where('voided', 0)
             .sum('total_amount as total')
             .first(),
-        db('invoices') // Pending payments are technically pending Invoices
-            .where('status', 'pending') // or 'unpaid' depending on invoice enum
+        db('invoices')
+            .where('status', 'pending')
             .count('* as count')
             .first(),
         db('transactions')
-            .where('transaction_date', 'like', `${todayStr}%`)
+            .where('transaction_date', '>=', todayStr)
+            .where('transaction_date', '<', tomorrowStr)
             .count('* as count')
             .first()
     ]);
@@ -226,10 +226,16 @@ router.get('/stats/overview', auth, asyncHandler(async (req, res) => {
 // Get daily summary
 router.get('/stats/daily-summary', auth, asyncHandler(async (req, res) => {
     const { date } = req.query;
-    const targetDate = date ? new Date(date as string).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+    const targetDateStr = date ? (date as string) : new Date().toISOString().split('T')[0];
+
+    const targetDate = new Date(targetDateStr);
+    const nextDay = new Date(targetDate);
+    nextDay.setDate(nextDay.getDate() + 1);
+    const nextDayStr = nextDay.toISOString().split('T')[0];
 
     const summary = await db('transactions')
-        .where('transaction_date', 'like', `${targetDate}%`)
+        .where('transaction_date', '>=', targetDateStr)
+        .where('transaction_date', '<', nextDayStr)
         .where('voided', 0)
         .select('payment_method')
         .sum('total_amount as total')
@@ -237,13 +243,14 @@ router.get('/stats/daily-summary', auth, asyncHandler(async (req, res) => {
         .groupBy('payment_method');
 
     const totalRevenue = await db('transactions')
-        .where('transaction_date', 'like', `${targetDate}%`)
+        .where('transaction_date', '>=', targetDateStr)
+        .where('transaction_date', '<', nextDayStr)
         .where('voided', 0)
         .sum('total_amount as total')
         .first();
 
     res.json({
-        date: targetDate,
+        date: targetDateStr,
         totalRevenue: totalRevenue?.total || 0,
         breakdown: summary
     });

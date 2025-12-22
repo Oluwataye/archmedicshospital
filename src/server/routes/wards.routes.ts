@@ -13,11 +13,11 @@ router.get('/', auth, asyncHandler(async (req, res) => {
             'wards.*',
             'departments.name as department_name',
             db.raw('count(beds.id) as total_beds'),
-            db.raw('count(CASE WHEN beds.is_occupied = 1 THEN 1 END) as occupied_beds')
+            db.raw('count(CASE WHEN beds.is_occupied IS TRUE THEN 1 END) as occupied_beds')
         )
         .leftJoin('beds', 'wards.id', 'beds.ward_id')
         .leftJoin('departments', 'wards.department_id', 'departments.id')
-        .groupBy('wards.id');
+        .groupBy('wards.id', 'departments.name');
 
     res.json(wards);
 }));

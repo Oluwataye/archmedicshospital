@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
     DialogHeader,
     DialogTitle,
     DialogFooter
@@ -109,6 +110,9 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({ open, onOpenChange, o
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
                     <DialogTitle>Schedule New Appointment</DialogTitle>
+                    <DialogDescription>
+                        Search for a patient and assign a doctor for a new scheduled visit.
+                    </DialogDescription>
                 </DialogHeader>
 
                 {loading ? (

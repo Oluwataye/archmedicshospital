@@ -132,6 +132,7 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 function AppRoutes() {
+  const { user } = useAuth();
   return (
     <Routes>
       {/* Public Routes */}

@@ -28,32 +28,29 @@ router.get('/disease-prevalence', auth, async (req, res) => {
     try {
         const { timeRange, ageGroup, gender, search } = req.query;
 
-        // Build base query for medical records with diagnosis information
-        let query = db('medical_records')
+        // 1. Prepare base data extraction
+        const baseQuery = db('medical_records')
             .join('patients', 'medical_records.patient_id', 'patients.id')
-            .select(
-                db.raw(`
-                    (medical_records.content::jsonb->>'diagnosis') as disease,
-                    COUNT(*) as cases,
-                    patients.gender,
+            .select({
+                disease: db.raw("(medical_records.content::jsonb->>'diagnosis')"),
+                gender: 'patients.gender',
+                age_group: db.raw(`
                     CASE
                         WHEN EXTRACT(YEAR FROM AGE(patients.date_of_birth)) < 18 THEN 'Child (0-17)'
                         WHEN EXTRACT(YEAR FROM AGE(patients.date_of_birth)) BETWEEN 18 AND 35 THEN 'Young Adult (18-35)'
                         WHEN EXTRACT(YEAR FROM AGE(patients.date_of_birth)) BETWEEN 36 AND 65 THEN 'Adult (36-65)'
                         ELSE 'Senior (65+)'
-                    END as age_group,
-                    to_char(medical_records.record_date, 'YYYY "Q"') || to_char(medical_records.record_date, 'Q') as period
-                `)
-            )
-            .where('medical_records.content', 'like', '{%')
-            .whereRaw("(medical_records.content::jsonb->>'diagnosis') IS NOT NULL")
-            .whereRaw("(medical_records.content::jsonb->>'diagnosis') != ''");
+                    END
+                `),
+                period: db.raw("to_char(medical_records.record_date, 'YYYY \"Q\"Q')"),
+                record_date: 'medical_records.record_date'
+            })
+            .where('medical_records.content', 'like', '{%');
 
-        // Apply filters
+        // Apply filters to base query
         if (timeRange && timeRange !== 'all') {
             const now = new Date();
             let dateFrom;
-
             switch (timeRange) {
                 case 'current':
                     const currentQuarter = Math.floor(now.getMonth() / 3) + 1;
@@ -66,43 +63,35 @@ router.get('/disease-prevalence', auth, async (req, res) => {
                     dateFrom = new Date(now.getFullYear() - 1, now.getMonth(), 1);
                     break;
             }
-
             if (dateFrom) {
-                query = query.where('medical_records.record_date', '>=', dateFrom.toISOString());
+                baseQuery.where('medical_records.record_date', '>=', dateFrom.toISOString().split('T')[0]);
             }
         }
 
-        if (ageGroup && ageGroup !== 'all') {
-            query = query.whereRaw(`
-                CASE
-                    WHEN EXTRACT(YEAR FROM AGE(patients.date_of_birth)) < 18 THEN 'Child (0-17)'
-                    WHEN EXTRACT(YEAR FROM AGE(patients.date_of_birth)) BETWEEN 18 AND 35 THEN 'Young Adult (18-35)'
-                    WHEN EXTRACT(YEAR FROM AGE(patients.date_of_birth)) BETWEEN 36 AND 65 THEN 'Adult (36-65)'
-                    ELSE 'Senior (65+)'
-                END LIKE ?
-            `, [`%${ageGroup}%`]);
-        }
-
         if (gender && gender !== 'all') {
-            query = query.where('patients.gender', gender);
+            baseQuery.where('patients.gender', gender as string);
         }
 
-        // Group by disease and other dimensions
-        query = query.groupBy(
-            db.raw(`(medical_records.content::jsonb->>'diagnosis')`),
-            'patients.gender',
-            db.raw(`CASE
-                WHEN EXTRACT(YEAR FROM AGE(patients.date_of_birth)) < 18 THEN 'Child (0-17)'
-                WHEN EXTRACT(YEAR FROM AGE(patients.date_of_birth)) BETWEEN 18 AND 35 THEN 'Young Adult (18-35)'
-                WHEN EXTRACT(YEAR FROM AGE(patients.date_of_birth)) BETWEEN 36 AND 65 THEN 'Adult (36-65)'
-                ELSE 'Senior (65+)'
-            END`),
-            db.raw(`to_char(medical_records.record_date, 'YYYY "Q"') || to_char(medical_records.record_date, 'Q')`)
-        );
+        // 2. Perform aggregation on base data
+        const mainQuery = db.select('disease', 'gender', 'age_group', 'period')
+            .count('* as cases')
+            .from(baseQuery.as('sub'))
+            .whereNotNull('disease')
+            .where('disease', '!=', '')
+            .groupBy('disease', 'gender', 'age_group', 'period');
 
-        let results = await query as any[];
+        // Apply search and age group filters after grouping
+        if (ageGroup && ageGroup !== 'all') {
+            mainQuery.where('age_group', 'like', `%${ageGroup}%`);
+        }
 
-        // Get historical data for trend calculation
+        if (search) {
+            mainQuery.where('disease', 'ilike', `%${search}%`);
+        }
+
+        const results = await mainQuery;
+
+        // 3. Get historical data for trend calculation
         const threeMonthsAgo = new Date();
         threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
 
@@ -110,24 +99,16 @@ router.get('/disease-prevalence', auth, async (req, res) => {
             .select(db.raw(`(content::jsonb->>'diagnosis') as disease, COUNT(*) as cases`))
             .where('content', 'like', '{%')
             .whereRaw("(content::jsonb->>'diagnosis') IS NOT NULL")
-            .where('record_date', '<', threeMonthsAgo.toISOString())
+            .where('record_date', '<', threeMonthsAgo.toISOString().split('T')[0])
             .groupBy(db.raw(`(content::jsonb->>'diagnosis')`));
 
         const historicalMap = new Map(historicalQuery.map(h => [h.disease, parseInt(h.cases)]));
 
-        // Apply search filter after query
-        // Apply search filter after query
-        if (search) {
-            results = results.filter(r =>
-                r.disease?.toLowerCase().includes(String(search).toLowerCase())
-            );
-        }
-
-        // Format results with trends and departments
+        // 4. Format results
         const formattedResults = results.map((row, index) => {
             const disease = row.disease || 'Unknown';
             const currentCases = parseInt(row.cases) || 0;
-            const historicalCases = (historicalMap.get(disease) as any) || 0;
+            const historicalCases = Number(historicalMap.get(disease)) || 0;
             const percentageChange = historicalCases > 0
                 ? ((currentCases - historicalCases) / historicalCases) * 100
                 : 0;

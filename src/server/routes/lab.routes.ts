@@ -115,7 +115,7 @@ router.get('/stats/overview', auth, async (req, res) => {
             db('lab_results').count('* as count').first(),
             db('lab_results').where('status', 'ordered').count('* as count').first(),
             db('lab_results').where('status', 'completed').count('* as count').first(),
-            db('lab_results').where('is_critical', 1).where('status', 'completed').count('* as count').first()
+            db('lab_results').where('is_critical', true).where('status', 'completed').count('* as count').first()
         ]);
         log.debug('Lab stats fetched', { totalTests, pendingTests, completedTests, criticalResults });
 
@@ -137,7 +137,7 @@ router.get('/critical/results', auth, async (req, res) => {
     try {
         log.debug('Fetching critical results');
         const criticalResults = await db('lab_results')
-            .where('is_critical', 1)
+            .where('is_critical', true)
             .where('status', 'completed')
             .select('*')
             .orderBy('result_date', 'desc')

@@ -55,7 +55,7 @@ const navItems: NavItem[] = [
         title: 'Doctor Dashboard',
         href: '/doctor',
         icon: LayoutDashboard,
-        roles: ['doctor', 'admin'],
+        roles: ['doctor'],
     },
     {
         title: 'Nurse Dashboard',
@@ -85,14 +85,14 @@ const navItems: NavItem[] = [
         title: 'My Patients',
         href: '/doctor/patients',
         icon: Users,
-        roles: ['doctor', 'admin'],
+        roles: ['doctor'],
     },
 
     {
         title: 'Appointments',
         href: '/doctor/appointments',
         icon: Calendar,
-        roles: ['doctor', 'admin'],
+        roles: ['doctor'],
     },
 
     {

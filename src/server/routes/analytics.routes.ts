@@ -33,26 +33,20 @@ router.get('/disease-prevalence', auth, async (req, res) => {
             .join('patients', 'medical_records.patient_id', 'patients.id')
             .select(
                 db.raw(`
-                    json_extract(medical_records.content, '$.diagnosis') as disease,
+                    (medical_records.content::jsonb->>'diagnosis') as disease,
                     COUNT(*) as cases,
                     patients.gender,
                     CASE
-                        WHEN (julianday('now') - julianday(patients.date_of_birth)) / 365.25 < 18 THEN 'Child (0-17)'
-                        WHEN (julianday('now') - julianday(patients.date_of_birth)) / 365.25 BETWEEN 18 AND 35 THEN 'Young Adult (18-35)'
-                        WHEN (julianday('now') - julianday(patients.date_of_birth)) / 365.25 BETWEEN 36 AND 65 THEN 'Adult (36-65)'
+                        WHEN EXTRACT(YEAR FROM AGE(patients.date_of_birth)) < 18 THEN 'Child (0-17)'
+                        WHEN EXTRACT(YEAR FROM AGE(patients.date_of_birth)) BETWEEN 18 AND 35 THEN 'Young Adult (18-35)'
+                        WHEN EXTRACT(YEAR FROM AGE(patients.date_of_birth)) BETWEEN 36 AND 65 THEN 'Adult (36-65)'
                         ELSE 'Senior (65+)'
                     END as age_group,
-                    strftime('%Y Q', medical_records.record_date) || 
-                    CASE 
-                        WHEN CAST(strftime('%m', medical_records.record_date) AS INTEGER) <= 3 THEN '1'
-                        WHEN CAST(strftime('%m', medical_records.record_date) AS INTEGER) <= 6 THEN '2'
-                        WHEN CAST(strftime('%m', medical_records.record_date) AS INTEGER) <= 9 THEN '3'
-                        ELSE '4'
-                    END as period
+                    to_char(medical_records.record_date, 'YYYY "Q"') || to_char(medical_records.record_date, 'Q') as period
                 `)
             )
-            .whereRaw("json_extract(medical_records.content, '$.diagnosis') IS NOT NULL")
-            .whereRaw("json_extract(medical_records.content, '$.diagnosis') != ''");
+            .whereRaw("(medical_records.content::jsonb->>'diagnosis') IS NOT NULL")
+            .whereRaw("(medical_records.content::jsonb->>'diagnosis') != ''");
 
         // Apply filters
         if (timeRange && timeRange !== 'all') {
@@ -87,10 +81,15 @@ router.get('/disease-prevalence', auth, async (req, res) => {
 
         // Group by disease and other dimensions
         query = query.groupBy(
-            db.raw(`json_extract(medical_records.content, '$.diagnosis')`),
+            db.raw(`(medical_records.content::jsonb->>'diagnosis')`),
             'patients.gender',
-            db.raw('age_group'),
-            db.raw('period')
+            db.raw(`CASE
+                WHEN EXTRACT(YEAR FROM AGE(patients.date_of_birth)) < 18 THEN 'Child (0-17)'
+                WHEN EXTRACT(YEAR FROM AGE(patients.date_of_birth)) BETWEEN 18 AND 35 THEN 'Young Adult (18-35)'
+                WHEN EXTRACT(YEAR FROM AGE(patients.date_of_birth)) BETWEEN 36 AND 65 THEN 'Adult (36-65)'
+                ELSE 'Senior (65+)'
+            END`),
+            db.raw(`to_char(medical_records.record_date, 'YYYY "Q"') || to_char(medical_records.record_date, 'Q')`)
         );
 
         let results = await query as any[];
@@ -100,10 +99,10 @@ router.get('/disease-prevalence', auth, async (req, res) => {
         threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
 
         const historicalQuery = await db('medical_records')
-            .select(db.raw(`json_extract(content, '$.diagnosis') as disease, COUNT(*) as cases`))
-            .whereRaw("json_extract(content, '$.diagnosis') IS NOT NULL")
+            .select(db.raw(`(content::jsonb->>'diagnosis') as disease, COUNT(*) as cases`))
+            .whereRaw("(content::jsonb->>'diagnosis') IS NOT NULL")
             .where('record_date', '<', threeMonthsAgo.toISOString())
-            .groupBy(db.raw(`json_extract(content, '$.diagnosis')`));
+            .groupBy(db.raw(`(content::jsonb->>'diagnosis')`));
 
         const historicalMap = new Map(historicalQuery.map(h => [h.disease, parseInt(h.cases)]));
 
@@ -161,26 +160,26 @@ router.get('/treatment-outcomes', auth, async (req, res) => {
             .join('patients', 'medical_records.patient_id', 'patients.id')
             .select(
                 db.raw(`
-                    json_extract(medical_records.content, '$.treatment') as treatment,
-                    json_extract(medical_records.content, '$.diagnosis') as condition,
+                    (medical_records.content::jsonb->>'treatment') as treatment,
+                    (medical_records.content::jsonb->>'diagnosis') as condition,
                     patients.first_name || ' ' || patients.last_name as patient,
                     medical_records.record_date as start_date,
                     CASE 
-                        WHEN medical_records.status = 'final' THEN medical_records.record_date
+                        WHEN medical_records.status = 'final' THEN medical_records.record_date::text
                         ELSE 'Ongoing'
                     END as end_date,
                     CASE
-                        WHEN json_extract(medical_records.content, '$.outcome') = 'resolved' THEN 'Successful'
-                        WHEN json_extract(medical_records.content, '$.outcome') = 'improved' THEN 'Partially Successful'
-                        WHEN json_extract(medical_records.content, '$.outcome') = 'unchanged' THEN 'Unsuccessful'
+                        WHEN (medical_records.content::jsonb->>'outcome') = 'resolved' THEN 'Successful'
+                        WHEN (medical_records.content::jsonb->>'outcome') = 'improved' THEN 'Partially Successful'
+                        WHEN (medical_records.content::jsonb->>'outcome') = 'unchanged' THEN 'Unsuccessful'
                         ELSE 'Successful'
                     END as outcome,
-                    COALESCE(json_extract(medical_records.content, '$.notes'), medical_records.title) as notes,
+                    COALESCE((medical_records.content::jsonb->>'notes'), medical_records.title) as notes,
                     'General Medicine' as department,
                     medical_records.id as record_id
                 `)
             )
-            .whereRaw("json_extract(medical_records.content, '$.treatment') IS NOT NULL");
+            .whereRaw("(medical_records.content::jsonb->>'treatment') IS NOT NULL");
 
         // Apply time range filter
         if (timeRange && timeRange !== 'all') {

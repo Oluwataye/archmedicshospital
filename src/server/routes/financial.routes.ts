@@ -13,7 +13,8 @@ router.get('/dashboard', auth, async (req, res) => {
 
         // Today's Revenue
         const todayRevenue = await db('transactions')
-            .where('transaction_date', 'like', `${today}%`)
+            .where('transaction_date', '>=', today)
+            .where('transaction_date', '<', new Date(new Date(today).setDate(new Date(today).getDate() + 1)).toISOString().split('T')[0])
             .where('payment_status', 'completed')
             .where('voided', 0)
             .sum('total_amount as total')
@@ -37,7 +38,8 @@ router.get('/dashboard', auth, async (req, res) => {
 
         // Transaction Count Today
         const todayTxCount = await db('transactions')
-            .where('transaction_date', 'like', `${today}%`)
+            .where('transaction_date', '>=', today)
+            .where('transaction_date', '<', new Date(new Date(today).setDate(new Date(today).getDate() + 1)).toISOString().split('T')[0])
             .where('voided', 0)
             .count('id as count')
             .first();
@@ -76,16 +78,16 @@ router.get('/revenue-chart', auth, async (req, res) => {
         let groupBy, dateFormat, limit;
 
         if (period === 'month') {
-            groupBy = "strftime('%Y-%m-%d', transaction_date)";
+            groupBy = "to_char(transaction_date, 'YYYY-MM-DD')";
             dateFormat = 'YYYY-MM-DD';
             limit = 30;
         } else if (period === 'year') {
-            groupBy = "strftime('%Y-%m', transaction_date)";
+            groupBy = "to_char(transaction_date, 'YYYY-MM')";
             dateFormat = 'YYYY-MM';
             limit = 12;
         } else {
             // Default to week (last 7 days)
-            groupBy = "strftime('%Y-%m-%d', transaction_date)";
+            groupBy = "to_char(transaction_date, 'YYYY-MM-DD')";
             dateFormat = 'YYYY-MM-DD';
             limit = 7;
         }
@@ -162,7 +164,8 @@ router.get('/cashier-performance', auth, async (req, res) => {
                 db.raw('COUNT(transactions.id) as transaction_count'),
                 db.raw('SUM(transactions.total_amount) as total_revenue')
             )
-            .where('transactions.transaction_date', 'like', `${today}%`)
+            .where('transactions.transaction_date', '>=', today)
+            .where('transactions.transaction_date', '<', new Date(new Date(today).setDate(new Date(today).getDate() + 1)).toISOString().split('T')[0])
             .where('transactions.voided', 0)
             .groupBy('users.id', 'users.name')
             .orderBy('total_revenue', 'desc');

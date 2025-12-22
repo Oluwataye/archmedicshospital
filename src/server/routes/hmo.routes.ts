@@ -442,17 +442,17 @@ router.get('/reports/monthly-billing', auth, asyncHandler(async (req: Request, r
             knex.raw('SUM(hmo_claims.claim_amount) as total_approved'),
             knex.raw('SUM(hmo_claims.copay_amount) as patient_copay'),
             knex.raw(`(
-                SELECT GROUP_CONCAT(authorization_code, ', ')
+                SELECT string_agg(authorization_code, ', ')
                 FROM hmo_preauthorizations
                 WHERE hmo_preauthorizations.patient_id = patients.id
                 AND hmo_preauthorizations.hmo_provider_id = hmo_providers.id
-                AND strftime("%m", hmo_preauthorizations.created_at) = ?
-                AND strftime("%Y", hmo_preauthorizations.created_at) = ?
+                AND to_char(hmo_preauthorizations.created_at, 'MM') = ?
+                AND to_char(hmo_preauthorizations.created_at, 'YYYY') = ?
                 AND hmo_preauthorizations.status = 'approved'
             ) as authorization_codes`, [month.toString().padStart(2, '0'), year.toString()])
         )
-        .whereRaw('strftime("%m", hmo_claims.claim_date) = ?', [month.toString().padStart(2, '0')])
-        .whereRaw('strftime("%Y", hmo_claims.claim_date) = ?', [year.toString()])
+        .whereRaw('to_char(hmo_claims.claim_date, \'MM\') = ?', [month.toString().padStart(2, '0')])
+        .whereRaw('to_char(hmo_claims.claim_date, \'YYYY\') = ?', [year.toString()])
         .groupBy('hmo_providers.id', 'patients.id', 'hmo_providers.name', 'patients.first_name', 'patients.last_name', 'patients.nhis_enrollment_number');
 
     if (hmo_provider_id && hmo_provider_id !== 'all') {

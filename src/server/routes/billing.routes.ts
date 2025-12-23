@@ -185,32 +185,36 @@ router.post('/process-payment', auth, asyncHandler(async (req, res) => {
 
         for (const item of items) {
             if (item.type === 'Prescription') {
+                // Lock the prescription record before update
                 await trx('prescriptions')
                     .where({ id: item.source_id, status: 'pending_payment' })
+                    .forUpdate()
                     .update({ status: 'paid' });
             } else if (item.type === 'Laboratory') {
+                // Lock the lab result record before update
                 await trx('lab_results')
                     .where({ id: item.source_id, status: 'ordered' })
+                    .forUpdate()
                     .update({ status: 'paid' });
             } else if (item.type === 'Registration') {
+                // Lock the patient record before update
                 await trx('patients')
                     .where({ id: item.source_id })
+                    .forUpdate()
                     .update({ status: 'active' });
             } else if (item.type === 'InvoiceItem') {
-                // For InvoiceItem, we need to update the PARENT INVOICE status.
-                // We assume paying for an item contributes to paying the invoice.
-                // For simplicity, we'll collect invoice IDs and mark them as paid after the loop
-                // (Assuming the user pays for the items, effectively clearing the invoice)
+                // For InvoiceItem, we collect parent invoice IDs to lock and update them effectively
                 if (item.parent_id) {
                     processedInvoiceIds.add(item.parent_id);
                 }
             }
         }
 
-        // Mark processed invoices as paid
+        // Mark processed invoices as paid with locking
         if (processedInvoiceIds.size > 0) {
             await trx('invoices')
                 .whereIn('id', Array.from(processedInvoiceIds))
+                .forUpdate()
                 .update({ status: 'paid' });
         }
     });

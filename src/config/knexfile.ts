@@ -36,8 +36,10 @@ const config: { [key: string]: Knex.Config } = {
       password: process.env.DB_PASSWORD,
     },
     pool: {
-      min: 2,
-      max: 10,
+      min: 0,
+      max: 15,
+      idleTimeoutMillis: 10000,
+      acquireTimeoutMillis: 30000
     },
     migrations: {
       tableName: 'knex_migrations',
@@ -64,8 +66,10 @@ const config: { [key: string]: Knex.Config } = {
         ssl: { rejectUnauthorized: false }
       },
     pool: {
-      min: 2,
-      max: 10,
+      min: 0,
+      max: 20,
+      idleTimeoutMillis: 10000,
+      acquireTimeoutMillis: 30000
     },
     migrations: {
       tableName: 'knex_migrations',

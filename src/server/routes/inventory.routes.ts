@@ -139,7 +139,7 @@ router.post('/movements', auth, authorize(['admin', 'pharmacist']), asyncHandler
     const performed_by = (req as any).user.id;
 
     await db.transaction(async (trx) => {
-        const item = await trx('inventory_items').where('id', item_id).first();
+        const item = await trx('inventory_items').where('id', item_id).forUpdate().first();
         if (!item) throw Errors.notFound('Item');
 
         let newStock = item.current_stock;
@@ -160,7 +160,7 @@ router.post('/movements', auth, authorize(['admin', 'pharmacist']), asyncHandler
 
         // Update batch if provided
         if (batch_id) {
-            const batch = await trx('inventory_batches').where('id', batch_id).first();
+            const batch = await trx('inventory_batches').where('id', batch_id).forUpdate().first();
             if (batch) {
                 let newBatchQty = batch.remaining_quantity;
                 if (type === 'IN') newBatchQty += quantity;

@@ -1,48 +1,60 @@
 import fs from 'fs';
 import path from 'path';
 import db from '../db';
+import { log } from '../utils/logger';
 
 const BACKUP_DIR = path.join(process.cwd(), 'backups');
 
 // Backup directory handled externally or via cloud storage
 
 export const startScheduler = () => {
-    console.log('Starting backup scheduler...');
+    log.info('Starting backup scheduler...');
 
-    // Run every hour
-    setInterval(async () => {
+    // Run every hour - using a more controlled interval
+    const interval = setInterval(async () => {
         try {
             await checkAndRunBackup();
         } catch (error) {
-            console.error('Scheduler error:', error);
+            log.error('Scheduler error:', error);
         }
     }, 60 * 60 * 1000); // 1 hour
 
-    // Run immediately on startup to check if we missed one
-    checkAndRunBackup();
+    // Run immediately on startup
+    checkAndRunBackup().catch(err => log.error('Initial backup check failed', err));
+
+    return interval;
 };
 
-const checkAndRunBackup = async () => {
+/**
+ * Checks if a backup is due and runs it if necessary.
+ * Decoupled to allow triggering from cloud crons or manual requests.
+ */
+export const checkAndRunBackup = async () => {
     try {
-        // Get backup settings
         const setting = await db('settings').where('key', 'backup_frequency').first();
-        if (!setting) return;
+        if (!setting || !setting.value) {
+            log.info('Backup frequency not set, skipping automatic backup.');
+            return;
+        }
 
         const frequency = setting.value; // 'daily', 'weekly', 'monthly'
-        if (!frequency) return;
-
-        // Check last backup
         const lastBackupFile = getLastBackupFile();
+
         if (shouldRunBackup(lastBackupFile, frequency)) {
-            console.log(`Running automatic ${frequency} backup...`);
-            await performBackup();
+            log.info(`Running automatic ${frequency} backup...`);
+            return await performBackup();
         }
     } catch (error) {
-        console.error('Error in checkAndRunBackup:', error);
+        log.error('Error in checkAndRunBackup:', error);
+        throw error;
     }
 };
 
 const getLastBackupFile = () => {
+    if (!fs.existsSync(BACKUP_DIR)) {
+        fs.mkdirSync(BACKUP_DIR, { recursive: true });
+        return null;
+    }
     const files = fs.readdirSync(BACKUP_DIR)
         .filter(f => f.startsWith('auto_backup_') && f.endsWith('.json'))
         .sort()

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Check, AlertTriangle, Scan, X } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -198,6 +198,11 @@ ${Object.entries(counselingPoints).filter(([_, v]) => v).map(([k]) => `- ${k}`).
             <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>Dispense Prescription #{prescription.id.slice(0, 8)}</DialogTitle>
+                    <div className="sr-only">
+                        <DialogDescription>
+                            Dispense medications for the selected prescription. Review drug interactions, verify stock, and provide counseling.
+                        </DialogDescription>
+                    </div>
                 </DialogHeader>
 
                 <div className="space-y-6">

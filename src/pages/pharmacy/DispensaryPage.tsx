@@ -10,11 +10,17 @@ import { toast } from 'sonner';
 import { ApiService } from '@/services/apiService';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import DispenseModal from '@/components/pharmacy/DispenseModal';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 export default function DispensaryPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const initialSearch = queryParams.get('search') || '';
+
   const [activeTab, setActiveTab] = useState('pending');
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [prescriptions, setPrescriptions] = useState<any[]>([]);
 
   // Dispense Modal
@@ -24,6 +30,12 @@ export default function DispensaryPage() {
   useEffect(() => {
     loadPrescriptions();
   }, [activeTab]);
+
+  useEffect(() => {
+    if (initialSearch) {
+      setSearchQuery(initialSearch);
+    }
+  }, [initialSearch]);
 
   const loadPrescriptions = async () => {
     try {

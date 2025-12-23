@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -254,6 +254,11 @@ export default function DoctorPrescriptionsPage() {
                 <DialogContent className="sm:max-w-[600px]">
                     <DialogHeader>
                         <DialogTitle>{selectedPrescription ? 'Edit Prescription' : 'New Prescription'}</DialogTitle>
+                        <div className="sr-only">
+                            <DialogDescription>
+                                {selectedPrescription ? 'Modify medication details for an existing prescription.' : 'Create a new prescription by selecting a patient and adding medication details.'}
+                            </DialogDescription>
+                        </div>
                     </DialogHeader>
                     <form onSubmit={handleSave} className="space-y-4">
                         <div className="space-y-2">

@@ -17,11 +17,17 @@ import { useToast } from '@/hooks/use-toast';
 import { ApiService } from '@/services/apiService';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 
+import { useLocation } from 'react-router-dom';
+
 export default function PrescriptionsPage() {
   const { toast } = useToast();
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const initialSearch = queryParams.get('search') || '';
+
   const [loading, setLoading] = useState(true);
   const [prescriptions, setPrescriptions] = useState<any[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [statusFilter, setStatusFilter] = useState('All');
 
   // View Details Modal

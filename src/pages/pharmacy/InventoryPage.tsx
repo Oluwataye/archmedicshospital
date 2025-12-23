@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
@@ -301,6 +301,11 @@ export default function InventoryPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Manage Stock: {selectedItem?.name}</DialogTitle>
+            <div className="sr-only">
+              <DialogDescription>
+                Adjust stock levels, remove expired items, or record new stock.
+              </DialogDescription>
+            </div>
           </DialogHeader>
           <form onSubmit={handleRestockSubmit} className="space-y-4">
             <div className="space-y-2">
@@ -359,6 +364,11 @@ export default function InventoryPage() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Add New Inventory Item</DialogTitle>
+            <div className="sr-only">
+              <DialogDescription>
+                Create a new inventory item record with details like SKU, category, and reorder levels.
+              </DialogDescription>
+            </div>
           </DialogHeader>
           <form onSubmit={handleAddItem} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -466,6 +476,11 @@ export default function InventoryPage() {
         <DialogContent className="max-w-4xl max-h-[80vh]">
           <DialogHeader>
             <DialogTitle>Stock Movement History</DialogTitle>
+            <div className="sr-only">
+              <DialogDescription>
+                View the history of all stock adjustments, additions, and removals.
+              </DialogDescription>
+            </div>
           </DialogHeader>
           <div className="space-y-4">
             <div className="rounded-md border max-h-[60vh] overflow-y-auto">
@@ -496,8 +511,8 @@ export default function InventoryPage() {
                         <TableCell>{movement.item_name || '-'}</TableCell>
                         <TableCell>
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${movement.type === 'IN' ? 'bg-green-100 text-green-700' :
-                              movement.type === 'OUT' ? 'bg-red-100 text-red-700' :
-                                'bg-blue-100 text-blue-700'
+                            movement.type === 'OUT' ? 'bg-red-100 text-red-700' :
+                              'bg-blue-100 text-blue-700'
                             }`}>
                             {movement.type}
                           </span>

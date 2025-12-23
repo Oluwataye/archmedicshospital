@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, Check, X } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -149,6 +149,11 @@ export default function ResultEntryModal({ isOpen, onClose, order, onResultSaved
                     <DialogTitle>
                         {isViewOnly ? 'View' : 'Enter'} Lab Results - {order.test_name}
                     </DialogTitle>
+                    <div className="sr-only">
+                        <DialogDescription>
+                            {isViewOnly ? 'Review laboratory test results.' : 'Input laboratory test result values and clinical interpretations.'}
+                        </DialogDescription>
+                    </div>
                 </DialogHeader>
 
                 <div className="space-y-6">

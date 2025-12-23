@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Search, Bell, Package, PlusCircle, AlertTriangle, ShoppingCart, BarChart3, RefreshCw, Eye, CheckCircle2, XCircle } from 'lucide-react';
+import { Search, Bell, Package, PlusCircle, AlertTriangle, ShoppingCart, BarChart3, RefreshCw, Eye, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';

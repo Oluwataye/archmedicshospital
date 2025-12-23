@@ -3,7 +3,8 @@ import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, AlertTriangle, ShoppingCart, Edit, Trash2, Download } from 'lucide-react';
+import { Search, AlertTriangle, ShoppingCart, Edit, Trash2, Download, Upload } from 'lucide-react';
+import BulkUploadModal from '@/components/common/BulkUploadModal';
 import { toast } from "sonner";
 import {
   Select,
@@ -23,6 +24,7 @@ const InventoryPage = () => {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isBulkUploadModalOpen, setIsBulkUploadModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
 
@@ -199,6 +201,22 @@ const InventoryPage = () => {
     }
   };
 
+  // Handle bulk upload
+  const handleBulkUpload = async (data: any[]) => {
+    const formattedData = data.map((item, index) => ({
+      ...item,
+      id: `INV-B-${Date.now()}-${index}`,
+      currentStock: parseInt(item.currentStock) || 0,
+      minLevel: parseInt(item.minLevel) || 10,
+      maxLevel: parseInt(item.maxLevel) || 100,
+      status: 'In Stock',
+      statusColor: 'bg-green-100 text-green-800',
+      lastRestock: new Date().toLocaleDateString()
+    }));
+    setAllInventoryItems(prev => [...formattedData, ...prev]);
+    toast.success(`Successfully uploaded ${data.length} items`);
+  };
+
   // Export to CSV
   const handleExportToCSV = () => {
     try {
@@ -264,14 +282,24 @@ const InventoryPage = () => {
       {/* Page Header */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Laboratory Inventory</h1>
-        <Button
-          onClick={handleExportToCSV}
-          variant="outline"
-          className="flex items-center gap-2"
-        >
-          <Download className="h-4 w-4" />
-          Export to CSV
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => setIsBulkUploadModalOpen(true)}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <Upload className="h-4 w-4" />
+            Bulk Upload
+          </Button>
+          <Button
+            onClick={handleExportToCSV}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <Download className="h-4 w-4" />
+            Export to CSV
+          </Button>
+        </div>
       </div>
 
       {/* Alert for low stock items */}
@@ -479,6 +507,16 @@ const InventoryPage = () => {
         onClose={() => setIsDeleteDialogOpen(false)}
         onConfirm={confirmDelete}
         itemName={selectedItem?.name || ''}
+      />
+
+      <BulkUploadModal
+        isOpen={isBulkUploadModalOpen}
+        onClose={() => setIsBulkUploadModalOpen(false)}
+        onUpload={handleBulkUpload}
+        title="Bulk Upload Lab Inventory"
+        templateFileName="lab_inventory_template.csv"
+        templateData="name,category,currentStock,minLevel,maxLevel,location,expiryDate\nBeaker 500ml,Collection Supplies,20,5,50,Shelf B2,Jan 15 2026\nSlides,Testing Supplies,100,20,500,Shelf A1,N/A"
+        expectedFields={['name', 'category', 'currentStock', 'minLevel', 'maxLevel', 'location', 'expiryDate']}
       />
     </div>
   );

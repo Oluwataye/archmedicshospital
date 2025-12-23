@@ -6,7 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Plus, Package, AlertTriangle, RefreshCw, History } from 'lucide-react';
+import { Search, Plus, Package, AlertTriangle, RefreshCw, History, Upload } from 'lucide-react';
+import BulkUploadModal from '@/components/common/BulkUploadModal';
+import { ApiService } from '@/services/apiService';
 import { useLabInventory } from '@/hooks/useLabInventory';
 import { format, parseISO } from 'date-fns';
 import { toast } from 'sonner';
@@ -16,6 +18,7 @@ const LabInventoryPage = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isRestockModalOpen, setIsRestockModalOpen] = useState(false);
+    const [isBulkUploadModalOpen, setIsBulkUploadModalOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState<any>(null);
 
     // Form States
@@ -70,6 +73,18 @@ const LabInventoryPage = () => {
         }
     };
 
+    const handleBulkUpload = async (data: any[]) => {
+        const formattedData = data.map(item => ({
+            ...item,
+            currentStock: parseInt(item.currentStock) || 0,
+            minLevel: parseInt(item.minLevel) || 10,
+            maxLevel: parseInt(item.maxLevel) || 100,
+            unitCost: parseFloat(item.unitCost) || 0
+        }));
+        await ApiService.bulkCreateLabInventoryItems(formattedData);
+        refetch();
+    };
+
     const openRestockModal = (item: any) => {
         setSelectedItem(item);
         setRestockAmount(0);
@@ -93,6 +108,10 @@ const LabInventoryPage = () => {
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
+                    <Button variant="outline" onClick={() => setIsBulkUploadModalOpen(true)}>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Bulk Upload
+                    </Button>
                     <Button onClick={() => setIsAddModalOpen(true)} className="bg-indigo-600 hover:bg-indigo-700">
                         <Plus className="h-4 w-4 mr-2" />
                         Add Item
@@ -282,6 +301,16 @@ const LabInventoryPage = () => {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <BulkUploadModal
+                isOpen={isBulkUploadModalOpen}
+                onClose={() => setIsBulkUploadModalOpen(false)}
+                onUpload={handleBulkUpload}
+                title="Bulk Upload Lab Inventory"
+                templateFileName="lab_inventory_template.csv"
+                templateData="name,category,currentStock,minLevel,maxLevel,location,unitCost,supplier\nBeaker 500ml,glassware,20,5,50,Shelf B2,15.5,LabSupplies Co\nNitric Acid,reagent,10,2,20,Acid Cabinet,45.0,Chemical Corp"
+                expectedFields={['name', 'category', 'currentStock', 'minLevel', 'maxLevel', 'location', 'unitCost', 'supplier']}
+            />
         </div>
     );
 };

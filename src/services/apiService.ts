@@ -588,6 +588,16 @@ export class ApiService {
     return response.data;
   }
 
+  static async bulkCreateInventoryItems(items: any[]) {
+    const response = await apiClient.post('/inventory/items/bulk', { items });
+    return response.data;
+  }
+
+  static async bulkCreateLabInventoryItems(items: any[]) {
+    const response = await apiClient.post('/lab/inventory/bulk', { items });
+    return response.data;
+  }
+
   static async recordStockMovement(movementData: any) {
     const response = await apiClient.post('/inventory/movements', movementData);
     return response.data;

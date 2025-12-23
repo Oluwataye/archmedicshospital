@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Plus, AlertTriangle, Package, History } from 'lucide-react';
+import { Search, Filter, Plus, AlertTriangle, Package, History, Upload } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { ApiService } from '@/services/apiService';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import StockAlerts from '@/components/pharmacy/StockAlerts';
+import BulkUploadModal from '@/components/common/BulkUploadModal';
 
 interface InventoryItem {
   id: string;
@@ -52,6 +53,9 @@ export default function InventoryPage() {
     reorder_level: '',
     unit_measure: 'tablets'
   });
+
+  // Bulk Upload Modal
+  const [isBulkUploadModalOpen, setIsBulkUploadModalOpen] = useState(false);
 
   // History Modal
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
@@ -162,6 +166,18 @@ export default function InventoryPage() {
     }
   };
 
+  const handleBulkUpload = async (data: any[]) => {
+    // Transform formatting if needed
+    const formattedData = data.map(item => ({
+      ...item,
+      reorder_level: parseInt(item.reorder_level) || 10,
+      current_stock: parseInt(item.current_stock) || 0,
+      is_active: true
+    }));
+    await ApiService.bulkCreateInventoryItems(formattedData);
+    loadData();
+  };
+
   const getStatusColor = (current: number, reorder: number) => {
     if (current <= reorder) return 'text-red-600 bg-red-50';
     if (current <= reorder * 1.5) return 'text-yellow-600 bg-yellow-50';
@@ -186,6 +202,9 @@ export default function InventoryPage() {
           <p className="text-muted-foreground mt-1">Track stock levels, manage suppliers, and handle reorders</p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setIsBulkUploadModalOpen(true)}>
+            <Upload className="mr-2 h-4 w-4" /> Bulk Upload
+          </Button>
           <Button variant="outline" onClick={handleViewHistory}>
             <History className="mr-2 h-4 w-4" /> History
           </Button>
@@ -532,6 +551,16 @@ export default function InventoryPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <BulkUploadModal
+        isOpen={isBulkUploadModalOpen}
+        onClose={() => setIsBulkUploadModalOpen(false)}
+        onUpload={handleBulkUpload}
+        title="Bulk Upload Pharmacy Inventory"
+        templateFileName="pharmacy_inventory_template.csv"
+        templateData="name,generic_name,category,sku,reorder_level,unit_measure,current_stock\nParacetamol,Acetaminophen,Analgesics,MED001,100,tablets,500\nAmoxicillin,Amoxicillin,Antibiotics,MED002,50,capsules,200"
+        expectedFields={['name', 'generic_name', 'category', 'sku', 'reorder_level', 'unit_measure', 'current_stock']}
+      />
     </div>
   );
 }

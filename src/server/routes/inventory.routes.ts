@@ -80,6 +80,31 @@ router.post('/items', auth, authorize(['admin', 'pharmacist']), asyncHandler(asy
     res.status(201).json(newItem);
 }));
 
+// Bulk create items
+router.post('/items/bulk', auth, authorize(['admin', 'pharmacist']), asyncHandler(async (req, res) => {
+    const items = req.body.items;
+
+    if (!Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ error: 'Invalid items data' });
+    }
+
+    const createdItems = [];
+    await db.transaction(async (trx) => {
+        for (const item of items) {
+            const [id] = await trx('inventory_items').insert({
+                ...item,
+                created_at: trx.fn.now(),
+                updated_at: trx.fn.now()
+            });
+            const newItem = await trx('inventory_items').where({ id }).first();
+            createdItems.push(newItem);
+        }
+    });
+
+    log.info('Bulk inventory items created', { count: items.length });
+    res.status(201).json(createdItems);
+}));
+
 // Update item
 router.put('/items/:id', auth, authorize(['admin', 'pharmacist']), asyncHandler(async (req, res) => {
     const { id } = req.params;

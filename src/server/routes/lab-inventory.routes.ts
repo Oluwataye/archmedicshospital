@@ -153,6 +153,72 @@ router.post('/', auth, async (req, res) => {
     }
 });
 
+// Bulk create inventory items
+router.post('/bulk', auth, async (req, res) => {
+    try {
+        const { items } = req.body;
+
+        if (!Array.isArray(items) || items.length === 0) {
+            return res.status(400).json({ error: 'Invalid items data' });
+        }
+
+        const createdItems = [];
+        await db.transaction(async (trx) => {
+            for (const item of items) {
+                const {
+                    name,
+                    category,
+                    currentStock,
+                    minLevel,
+                    maxLevel,
+                    location,
+                    expiryDate,
+                    unitCost,
+                    supplier
+                } = item;
+
+                const { status, statusColor } = calculateStatus(currentStock, minLevel);
+                const id = `INV-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+                const newItem = {
+                    id,
+                    name,
+                    category,
+                    current_stock: currentStock,
+                    min_level: minLevel,
+                    max_level: maxLevel,
+                    location,
+                    expiry_date: expiryDate || null,
+                    status,
+                    status_color: statusColor,
+                    last_restock: new Date().toISOString(),
+                    unit_cost: unitCost || 0,
+                    supplier: supplier || null,
+                    created_by: req.user.id,
+                    updated_by: req.user.id
+                };
+
+                await trx('lab_inventory').insert(newItem);
+
+                await trx('lab_inventory_history').insert({
+                    inventory_id: id,
+                    action: 'created',
+                    new_stock: currentStock,
+                    changed_by: req.user.id,
+                    change_reason: 'Bulk creation'
+                });
+
+                createdItems.push(newItem);
+            }
+        });
+
+        return res.status(201).json(createdItems);
+    } catch (error) {
+        console.error('Error bulk creating items:', error);
+        res.status(500).json({ error: 'Failed to bulk create inventory items' });
+    }
+});
+
 // Update inventory item
 router.put('/:id', auth, async (req, res) => {
     try {

@@ -15,6 +15,9 @@ const PatientStatisticsModal: React.FC<PatientStatisticsModalProps> = ({ open, o
             <DialogContent className="max-w-4xl">
                 <DialogHeader>
                     <DialogTitle>Patient Statistics & Analytics</DialogTitle>
+                    <div className="sr-only">
+                        <p id="stats-desc">Detailed analytics and statistics for patient admissions and demographics.</p>
+                    </div>
                 </DialogHeader>
 
                 <Tabs defaultValue="overview" className="w-full">

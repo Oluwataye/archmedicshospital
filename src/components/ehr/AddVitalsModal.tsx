@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -111,6 +111,11 @@ export default function AddVitalsModal({ isOpen, onClose, patientId, onSave }: A
             <DialogContent className="sm:max-w-[600px]">
                 <DialogHeader>
                     <DialogTitle>Record Vital Signs</DialogTitle>
+                    <div className="sr-only">
+                        <DialogDescription>
+                            Enter current vital signs for the patient including blood pressure, heart rate, and temperature.
+                        </DialogDescription>
+                    </div>
                 </DialogHeader>
 
                 <div className="space-y-4">

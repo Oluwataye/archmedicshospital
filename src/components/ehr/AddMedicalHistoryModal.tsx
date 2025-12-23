@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -79,6 +79,11 @@ export default function AddMedicalHistoryModal({ isOpen, onClose, patientId, onS
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
                     <DialogTitle>Add Medical History</DialogTitle>
+                    <div className="sr-only">
+                        <DialogDescription>
+                            Record a new medical condition, past illness, or surgery.
+                        </DialogDescription>
+                    </div>
                 </DialogHeader>
 
                 <div className="space-y-4">

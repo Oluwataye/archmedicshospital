@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -83,6 +83,11 @@ export default function OrderLabTestModal({ isOpen, onClose, patientId, onSave }
             <DialogContent className="sm:max-w-[600px]">
                 <DialogHeader>
                     <DialogTitle>Order Lab Test</DialogTitle>
+                    <div className="sr-only">
+                        <DialogDescription>
+                            Create a new laboratory test order. Specify test type, clinical indication, and priority.
+                        </DialogDescription>
+                    </div>
                 </DialogHeader>
 
                 <div className="space-y-4">

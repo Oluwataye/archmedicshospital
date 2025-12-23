@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -93,6 +93,11 @@ export default function NewPrescriptionModal({ isOpen, onClose, patientId, onSav
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>New Prescription</DialogTitle>
+                    <div className="sr-only">
+                        <DialogDescription>
+                            Create a new prescription for the patient. Fill in medication details, dosage, and instructions.
+                        </DialogDescription>
+                    </div>
                 </DialogHeader>
 
                 <div className="space-y-4">

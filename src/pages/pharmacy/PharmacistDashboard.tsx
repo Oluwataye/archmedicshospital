@@ -138,21 +138,26 @@ export default function PharmacistDashboard() {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { label: 'Pending Verifications', val: stats.pendingVerifications, icon: Clock, color: 'text-yellow-600', bg: 'bg-yellow-100' },
-          { label: 'Ready to Dispense', val: stats.readyToDispense, icon: CheckCircle2, color: 'text-green-600', bg: 'bg-green-100' },
-          { label: 'Inventory Alerts', val: stats.inventoryAlerts, icon: AlertTriangle, color: 'text-red-600', bg: 'bg-red-100' },
-          { label: "Today's Volume", val: stats.totalPrescriptionsToday, icon: BarChart3, color: 'text-blue-600', bg: 'bg-blue-100' }
+          { label: 'Pending Verifications', val: stats.pendingVerifications, icon: Clock, color: 'text-yellow-600', bg: 'bg-yellow-100', accentClass: 'card-accent-orange', onClick: () => navigate('/pharmacy/prescriptions') },
+          { label: 'Ready to Dispense', val: stats.readyToDispense, icon: CheckCircle2, color: 'text-green-600', bg: 'bg-green-100', accentClass: 'card-accent-green', onClick: () => navigate('/pharmacy/dispensary') },
+          { label: 'Inventory Alerts', val: stats.inventoryAlerts, icon: AlertTriangle, color: 'text-red-600', bg: 'bg-red-100', accentClass: 'card-accent-red', onClick: () => navigate('/pharmacy/inventory') },
+          { label: "Today's Volume", val: stats.totalPrescriptionsToday, icon: BarChart3, color: 'text-blue-600', bg: 'bg-blue-100', accentClass: 'card-accent-blue' }
         ].map((s, i) => (
-          <Card key={i} className="shadow-sm border-none bg-white hover:shadow-md transition-shadow">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">{s.label}</p>
-                  <h3 className="text-3xl font-bold mt-1 text-gray-900">{s.val}</h3>
-                </div>
-                <div className={`p-3 rounded-2xl ${s.bg} ${s.color}`}>
-                  <s.icon size={24} />
-                </div>
+          <Card
+            key={i}
+            className={`cursor-pointer hover:shadow-lg transition-all hover:scale-105 border-none shadow-sm ${s.accentClass || ''}`}
+            onClick={s.onClick}
+          >
+            <CardContent className="p-6 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">{s.label}</p>
+                <h3 className={`text-3xl font-bold mt-1 ${s.color}`}>{s.val}</h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  View details {s.onClick && '→'}
+                </p>
+              </div>
+              <div className={`h-12 w-12 rounded-full flex items-center justify-center ${s.bg}`}>
+                <s.icon className={`h-6 w-6 ${s.color}`} />
               </div>
             </CardContent>
           </Card>

@@ -46,39 +46,76 @@ export default function BulkUploadModal({
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
-                const text = e.target?.result as string;
+                let text = e.target?.result as string;
+
+                // Remove Byte Order Mark (BOM) if present
+                if (text.charCodeAt(0) === 0xFEFF) {
+                    text = text.substring(1);
+                }
+
                 const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
-                if (lines.length < 2) {
-                    setError('CSV file is empty or missing data rows');
+                if (lines.length < 1) {
+                    setError('CSV file is empty');
                     return;
                 }
 
-                const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-                const data = lines.slice(1).map(line => {
-                    const values = line.split(',').map(v => v.trim());
+                // Identify delimiter (comma or semicolon)
+                const firstLine = lines[0];
+                const delimiter = firstLine.includes(';') ? ';' : ',';
+
+                // Robust line splitter handling quotes
+                const splitLine = (line: string) => {
+                    const result = [];
+                    let current = '';
+                    let inQuotes = false;
+                    for (let i = 0; i < line.length; i++) {
+                        const char = line[i];
+                        if (char === '"') {
+                            inQuotes = !inQuotes;
+                        } else if (char === delimiter && !inQuotes) {
+                            result.push(current.trim());
+                            current = '';
+                        } else {
+                            current += char;
+                        }
+                    }
+                    result.push(current.trim());
+                    return result;
+                };
+
+                const headers = splitLine(lines[0]).map(h => h.toLowerCase().replace(/['"]/g, ''));
+
+                // Validation: Check if all expected fields (case-insensitive) are present in headers
+                const missingFields = expectedFields.filter(f => !headers.includes(f.toLowerCase()));
+
+                if (missingFields.length > 0) {
+                    setError(`Missing required columns: ${missingFields.join(', ')}. Found: ${headers.join(', ')}`);
+                    setPreview(null);
+                    return;
+                }
+
+                const dataRows = lines.slice(1).map(line => {
+                    const values = splitLine(line);
                     const obj: any = {};
-                    headers.forEach((header, index) => {
-                        // Find the original expected field that matches this header (case-insensitive)
-                        const field = expectedFields.find(f => f.toLowerCase() === header);
-                        if (field) {
-                            obj[field] = values[index];
+                    expectedFields.forEach(field => {
+                        const headerIndex = headers.indexOf(field.toLowerCase());
+                        if (headerIndex !== -1) {
+                            let value = values[headerIndex] || '';
+                            // Remove wrapping quotes if present
+                            if (value.startsWith('"') && value.endsWith('"')) {
+                                value = value.substring(1, value.length - 1);
+                            }
+                            obj[field] = value;
                         }
                     });
                     return obj;
                 });
 
-                // Validation
-                const missingFields = expectedFields.filter(f => !headers.includes(f.toLowerCase()));
-                if (missingFields.length > 0) {
-                    setError(`Missing required columns: ${missingFields.join(', ')}`);
-                    setPreview(null);
-                } else {
-                    setError(null);
-                    setPreview(data);
-                }
+                setError(null);
+                setPreview(dataRows);
             } catch (err) {
                 console.error('Error parsing CSV:', err);
-                setError('Failed to parse CSV file. Please check the format.');
+                setError('Failed to parse CSV file. Please ensure it is a valid CSV format.');
             }
         };
         reader.readAsText(file);
